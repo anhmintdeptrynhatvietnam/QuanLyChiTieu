@@ -348,11 +348,39 @@ class StateStore {
   }
 
   importAllData(payload) {
-    if (payload.transactions) this.state.transactions = payload.transactions;
-    if (payload.wallets) this.state.wallets = payload.wallets;
-    if (payload.categories) this.state.categories = payload.categories;
+    if (payload.transactions) {
+      const seen = new Set();
+      this.state.transactions = payload.transactions.filter(t => {
+        if (!t.id || seen.has(t.id)) return false;
+        seen.add(t.id);
+        return true;
+      });
+    }
+    if (payload.wallets) {
+      const seen = new Set();
+      this.state.wallets = payload.wallets.filter(w => {
+        if (!w.id || seen.has(w.id)) return false;
+        seen.add(w.id);
+        return true;
+      });
+    }
+    if (payload.categories) {
+      const seen = new Set();
+      this.state.categories = payload.categories.filter(c => {
+        if (!c.id || seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+      });
+    }
     if (payload.budgets) this.state.budgets = payload.budgets;
-    if (payload.debts) this.state.debts = payload.debts;
+    if (payload.debts) {
+      const seen = new Set();
+      this.state.debts = payload.debts.filter(d => {
+        if (!d.id || seen.has(d.id)) return false;
+        seen.add(d.id);
+        return true;
+      });
+    }
     if (payload.settings) this.state.settings = { ...this.state.settings, ...payload.settings };
 
     this.recalculateWalletBalances();

@@ -47,6 +47,23 @@ export class GoogleSheetsService {
   }
 
   static async pushData(accessToken, spreadsheetId, state) {
+    // 1. Xóa sạch dữ liệu cũ các tab để tránh bị đọng dòng thừa (dangling rows) khi số lượng dòng thay đổi
+    try {
+      const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchClear`;
+      await fetch(clearUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ranges: ['Transactions!A:J', 'Wallets!A:G', 'Categories!A:E', 'Budgets!A:D', 'Debts!A:K']
+        })
+      });
+    } catch (e) {
+      console.warn('Lỗi khi clear dữ liệu cũ trước khi ghi:', e);
+    }
+
     const valueData = [
       // 1. Transactions Sheet
       {
@@ -122,45 +139,76 @@ export class GoogleSheetsService {
     const result = await res.json();
     const [txRange, walletRange, catRange, budgetRange, debtRange] = result.valueRanges;
 
-    const transactions = (txRange?.values || []).map(row => ({
-      id: row[0], date: row[1], type: row[2], amount: Number(row[3]) || 0,
-      categoryId: row[4] || '', walletId: row[5] || '', toWalletId: row[6] || null,
-      note: row[7] || '', createdAt: row[8] || new Date().toISOString(), updatedAt: row[9] || new Date().toISOString()
-    }));
+    // Deduplicate transactions by ID to prevent double calculation
+    const seenTxIds = new Set();
+    const transactions = [];
+    (txRange?.values || []).forEach(row => {
+      const id = row[0];
+      if (id && !seenTxIds.has(id)) {
+        seenTxIds.add(id);
+        transactions.push({
+          id: row[0], date: row[1], type: row[2], amount: Number(row[3]) || 0,
+          categoryId: row[4] || '', walletId: row[5] || '', toWalletId: row[6] || null,
+          note: row[7] || '', createdAt: row[8] || new Date().toISOString(), updatedAt: row[9] || new Date().toISOString()
+        });
+      }
+    });
 
-    const wallets = (walletRange?.values || []).map(row => ({
-      id: row[0], name: row[1], type: row[2], initialBalance: Number(row[3]) || 0,
-      currentBalance: Number(row[4]) || 0, icon: row[5] || 'wallet', color: row[6] || '#3b82f6'
-    }));
+    const seenWalletIds = new Set();
+    const wallets = [];
+    (walletRange?.values || []).forEach(row => {
+      const id = row[0];
+      if (id && !seenWalletIds.has(id)) {
+        seenWalletIds.add(id);
+        wallets.push({
+          id: row[0], name: row[1], type: row[2], initialBalance: Number(row[3]) || 0,
+          currentBalance: Number(row[4]) || 0, icon: row[5] || 'wallet', color: row[6] || '#3b82f6'
+        });
+      }
+    });
 
-    const categories = (catRange?.values || []).map(row => ({
-      id: row[0], name: row[1], type: row[2], icon: row[3] || 'tag', color: row[4] || '#94a3b8'
-    }));
+    const seenCatIds = new Set();
+    const categories = [];
+    (catRange?.values || []).forEach(row => {
+      const id = row[0];
+      if (id && !seenCatIds.has(id)) {
+        seenCatIds.add(id);
+        categories.push({
+          id: row[0], name: row[1], type: row[2], icon: row[3] || 'tag', color: row[4] || '#94a3b8'
+        });
+      }
+    });
 
     const budgets = (budgetRange?.values || []).map(row => ({
       id: row[0], categoryId: row[1], month: row[2], limitAmount: Number(row[3]) || 0
     }));
 
-    const debts = (debtRange?.values || []).map(row => {
-      let repayments = [];
-      try {
-        repayments = row[9] ? JSON.parse(row[9]) : [];
-      } catch (e) {
-        repayments = [];
+    const seenDebtIds = new Set();
+    const debts = [];
+    (debtRange?.values || []).forEach(row => {
+      const id = row[0];
+      if (id && !seenDebtIds.has(id)) {
+        seenDebtIds.add(id);
+        let repayments = [];
+        try {
+          repayments = row[9] ? JSON.parse(row[9]) : [];
+        } catch (e) {
+          repayments = [];
+        }
+        debts.push({
+          id: row[0],
+          personName: row[1],
+          type: row[2],
+          amount: Number(row[3]) || 0,
+          remainingAmount: Number(row[4]) || 0,
+          walletId: row[5],
+          dueDate: row[6] || null,
+          note: row[7] || '',
+          status: row[8] || 'pending',
+          repayments,
+          createdAt: row[10] || new Date().toISOString()
+        });
       }
-      return {
-        id: row[0],
-        personName: row[1],
-        type: row[2],
-        amount: Number(row[3]) || 0,
-        remainingAmount: Number(row[4]) || 0,
-        walletId: row[5],
-        dueDate: row[6] || null,
-        note: row[7] || '',
-        status: row[8] || 'pending',
-        repayments,
-        createdAt: row[10] || new Date().toISOString()
-      };
     });
 
     return {

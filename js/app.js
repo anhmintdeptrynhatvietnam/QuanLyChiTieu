@@ -64,7 +64,12 @@ class App {
 
     // Init Google Auth if Client ID exists
     const clientId = stateStore.getState().settings.googleClientId;
-    if (clientId) googleAuthService.init(clientId);
+    if (clientId) {
+      googleAuthService.init(clientId);
+      if (googleAuthService.getValidToken()) {
+        stateStore.setSyncStatus({ status: 'connected', message: 'Đã kết nối Google' });
+      }
+    }
   }
 
   applyTheme(theme) {
