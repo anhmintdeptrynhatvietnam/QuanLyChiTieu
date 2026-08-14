@@ -138,16 +138,27 @@ class App {
   }
 
   setupSyncStatusSubscriber() {
+    const badge = document.getElementById('sync-status-badge');
+    if (badge) {
+      badge.addEventListener('click', () => {
+        if (window.syncModal) {
+          window.syncModal.open();
+        } else {
+          this.switchView('settings');
+        }
+      });
+    }
+
     stateStore.subscribe((event, data, state) => {
-      const badge = document.getElementById('sync-status-badge');
+      const badgeEl = document.getElementById('sync-status-badge');
       const textEl = document.getElementById('sync-status-text');
-      if (!badge || !textEl) return;
+      if (!badgeEl || !textEl) return;
 
       const isConnected = googleAuthService.getValidToken() !== null;
-      badge.className = `badge ${isConnected ? 'badge-income' : 'badge-subtle'}`;
-      textEl.textContent = state.syncStatus.message || (isConnected ? 'Đã kết nối' : 'Chưa kết nối Google');
+      badgeEl.className = `badge ${isConnected ? 'badge-income' : 'badge-subtle'}`;
+      textEl.textContent = state.syncStatus.message || (isConnected ? 'Đã kết nối Google' : 'Chưa kết nối Google');
 
-      const icon = badge.querySelector('i');
+      const icon = badgeEl.querySelector('i');
       if (icon) {
         icon.setAttribute('data-lucide', isConnected ? 'cloud' : 'cloud-off');
         this.renderIcons();

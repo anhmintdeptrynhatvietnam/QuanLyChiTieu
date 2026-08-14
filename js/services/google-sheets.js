@@ -172,8 +172,60 @@ export class GoogleSheetsService {
     };
   }
 
-  static async sync(accessToken) {
-    stateStore.setSyncStatus({ status: 'syncing', message: 'Đang đồng bộ với Google Sheets...' });
+  // --- Snapshot & Backup Methods ---
+  static savePrePullBackup(state) {
+    try {
+      const backupData = {
+        state: JSON.parse(JSON.stringify(state)),
+        savedAt: new Date().toISOString(),
+        txCount: state.transactions?.length || 0,
+        walletCount: state.wallets?.length || 0
+      };
+      localStorage.setItem('quanlythuchi_pre_pull_backup', JSON.stringify(backupData));
+      return true;
+    } catch (e) {
+      console.warn('Không thể tạo bản sao lưu an toàn trước khi kéo:', e);
+      return false;
+    }
+  }
+
+  static hasPrePullBackup() {
+    return !!localStorage.getItem('quanlythuchi_pre_pull_backup');
+  }
+
+  static getPrePullBackupInfo() {
+    try {
+      const item = localStorage.getItem('quanlythuchi_pre_pull_backup');
+      return item ? JSON.parse(item) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static clearPrePullBackup() {
+    localStorage.removeItem('quanlythuchi_pre_pull_backup');
+  }
+
+  static restorePrePullBackup() {
+    try {
+      const backup = this.getPrePullBackupInfo();
+      if (!backup || !backup.state) {
+        throw new Error('Không tìm thấy bản sao lưu dự phòng');
+      }
+      stateStore.importAllData(backup.state);
+      this.clearPrePullBackup();
+      const nowStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      stateStore.setSyncStatus({ status: 'synced', message: `Đã khôi phục dữ liệu lúc ${nowStr}` });
+      return { success: true, backup };
+    } catch (err) {
+      console.error('Lỗi khi khôi phục snapshot:', err);
+      throw err;
+    }
+  }
+
+  // --- Push: Local -> Google Sheets ---
+  static async push(accessToken) {
+    stateStore.setSyncStatus({ status: 'syncing', message: 'Đang đẩy dữ liệu lên Google Sheets...' });
     try {
       const state = stateStore.getState();
       let sheetId = state.settings.spreadsheetId;
@@ -188,12 +240,54 @@ export class GoogleSheetsService {
 
       const nowStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       stateStore.updateSettings({ lastSyncTime: new Date().toISOString() });
-      stateStore.setSyncStatus({ status: 'synced', message: `Đã đồng bộ lúc ${nowStr}`, lastSync: new Date().toISOString() });
-      return { success: true, sheetId };
+      stateStore.setSyncStatus({ status: 'synced', message: `Đã đẩy lên Sheets lúc ${nowStr}`, lastSync: new Date().toISOString() });
+      return { success: true, sheetId, count: state.transactions?.length || 0 };
     } catch (err) {
-      console.error('Sync Error:', err);
-      stateStore.setSyncStatus({ status: 'error', message: 'Đồng bộ thất bại: ' + err.message });
+      console.error('Push Error:', err);
+      stateStore.setSyncStatus({ status: 'error', message: 'Đẩy dữ liệu thất bại: ' + err.message });
       throw err;
     }
+  }
+
+  // --- Pull: Google Sheets -> Local ---
+  static async pull(accessToken) {
+    stateStore.setSyncStatus({ status: 'syncing', message: 'Đang kéo dữ liệu từ Google Sheets về máy...' });
+    try {
+      const state = stateStore.getState();
+      let sheetId = state.settings.spreadsheetId;
+
+      if (!sheetId) {
+        sheetId = await this.findOrCreateSpreadsheet(accessToken, state.settings.spreadsheetName || 'QuanLyChiTieu_DB');
+        stateStore.updateSettings({ spreadsheetId: sheetId });
+      }
+
+      // 1. Fetch data from Google Sheets
+      const cloudData = await this.pullData(accessToken, sheetId);
+
+      // 2. Create safe snapshot backup before overwrite
+      this.savePrePullBackup(state);
+
+      // 3. Import data into state
+      stateStore.importAllData(cloudData);
+
+      const nowStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      stateStore.updateSettings({ lastSyncTime: new Date().toISOString() });
+      stateStore.setSyncStatus({ status: 'synced', message: `Đã tải về từ Sheets lúc ${nowStr}`, lastSync: new Date().toISOString() });
+      return { 
+        success: true, 
+        sheetId, 
+        txCount: cloudData.transactions?.length || 0,
+        walletCount: cloudData.wallets?.length || 0
+      };
+    } catch (err) {
+      console.error('Pull Error:', err);
+      stateStore.setSyncStatus({ status: 'error', message: 'Kéo dữ liệu thất bại: ' + err.message });
+      throw err;
+    }
+  }
+
+  // Backwards compatibility alias
+  static async sync(accessToken) {
+    return this.push(accessToken);
   }
 }

@@ -1,15 +1,16 @@
-/**
- * Settings & Google Cloud Sync Component
- */
 import { stateStore } from '../state.js';
 import { googleAuthService } from '../services/google-auth.js';
 import { GoogleSheetsService } from '../services/google-sheets.js';
 import { ExportImportService } from '../services/export-import.js';
+import { SyncModal } from './sync-modal.js';
+import { showToast } from './toast.js';
 import { escapeHtml } from '../utils/helpers.js';
 
 export class Settings {
   constructor(containerId = 'view-settings') {
     this.container = document.getElementById(containerId);
+    this.syncModal = new SyncModal();
+    window.syncModal = this.syncModal;
     this.init();
   }
 
@@ -23,9 +24,37 @@ export class Settings {
     const state = stateStore.getState();
     const isConnected = googleAuthService.getValidToken() !== null;
     const syncStatus = state.syncStatus;
+    const hasBackup = GoogleSheetsService.hasPrePullBackup();
+    const backupInfo = hasBackup ? GoogleSheetsService.getPrePullBackupInfo() : null;
 
     this.container.innerHTML = `
       <div class="flex flex-col gap-6">
+        <!-- Undo Banner (if user pulled recently) -->
+        ${hasBackup && backupInfo ? `
+          <div class="card" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-left: 4px solid #f59e0b; padding: var(--space-3);">
+            <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 8px;">
+              <div class="flex items-center gap-2">
+                <i data-lucide="info" style="width: 18px; height: 18px; color: #f59e0b; flex-shrink: 0;"></i>
+                <div>
+                  <strong style="color: #d97706; font-size: var(--font-size-sm);">Bản sao lưu trước khi kéo từ Cloud</strong>
+                  <div class="text-muted" style="font-size: 11px;">
+                    Lưu lúc ${new Date(backupInfo.savedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} (${backupInfo.txCount || 0} giao dịch, ${backupInfo.walletCount || 0} ví)
+                  </div>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button type="button" class="btn btn-primary" id="btn-undo-pull" style="padding: 5px 10px; font-size: var(--font-size-xs); background: #d97706; border-color: #d97706;">
+                  <i data-lucide="undo" style="width: 14px; height: 14px;"></i>
+                  <span>Hoàn Tác Lại</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="btn-dismiss-undo" style="padding: 5px 8px; font-size: var(--font-size-xs);">
+                  Bỏ qua
+                </button>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- Google Sheets Cloud Sync Card -->
         <div class="card">
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-3);">
@@ -50,20 +79,28 @@ export class Settings {
               <small class="text-muted">Client ID dùng để xác thực an toàn trực tiếp với Google Sheets của bạn.</small>
             </div>
 
-            <div class="flex gap-3" style="flex-wrap: wrap; margin-top: var(--space-2);">
+            <div class="flex gap-2" style="flex-wrap: wrap; margin-top: var(--space-2);">
               ${!isConnected ? `
                 <button type="button" class="btn btn-primary" id="btn-connect-google">
                   <i data-lucide="log-in" style="width: 16px; height: 16px;"></i>
                   <span>Kết Nối Tài Khoản Google</span>
                 </button>
               ` : `
-                <button type="button" class="btn btn-primary" id="btn-sync-now">
+                <button type="button" class="btn btn-primary" id="btn-open-sync-modal">
                   <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
-                  <span>Đồng Bộ Ngay (Sync Now)</span>
+                  <span>Đồng Bộ (2 Lựa Chọn)</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="btn-quick-push" title="Đẩy dữ liệu lên Cloud">
+                  <i data-lucide="arrow-up-circle" style="width: 16px; height: 16px; color: var(--primary-600);"></i>
+                  <span>Đẩy Lên</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="btn-quick-pull" title="Kéo dữ liệu về Máy">
+                  <i data-lucide="arrow-down-circle" style="width: 16px; height: 16px; color: #10b981;"></i>
+                  <span>Kéo Về</span>
                 </button>
                 <button type="button" class="btn btn-secondary" id="btn-disconnect-google">
                   <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
-                  <span>Đăng Xuất Google</span>
+                  <span>Đăng Xuất</span>
                 </button>
               `}
             </div>
@@ -235,17 +272,43 @@ export class Settings {
       });
     }
 
+    // Undo Pull
+    const undoBtn = this.container.querySelector('#btn-undo-pull');
+    if (undoBtn) {
+      undoBtn.addEventListener('click', () => {
+        if (confirm('Bạn có chắc chắn muốn hoàn tác lại dữ liệu trước lần kéo gần nhất từ Google Sheets?')) {
+          try {
+            GoogleSheetsService.restorePrePullBackup();
+            if (window.showToast) showToast('Đã hoàn tác lại dữ liệu thành công!', 'success');
+            else alert('Đã hoàn tác lại dữ liệu thành công!');
+            this.render();
+          } catch (err) {
+            alert('Lỗi hoàn tác: ' + err.message);
+          }
+        }
+      });
+    }
+
+    // Dismiss Undo Banner
+    const dismissUndoBtn = this.container.querySelector('#btn-dismiss-undo');
+    if (dismissUndoBtn) {
+      dismissUndoBtn.addEventListener('click', () => {
+        GoogleSheetsService.clearPrePullBackup();
+        this.render();
+      });
+    }
+
     // Connect Google
     const connectBtn = this.container.querySelector('#btn-connect-google');
     if (connectBtn) {
       connectBtn.addEventListener('click', () => {
-        googleAuthService.init(stateStore.getState().settings.googleClientId, async (token) => {
-          try {
-            await GoogleSheetsService.sync(token);
-            alert('Đồng bộ dữ liệu với Google Sheets thành công!');
-          } catch (e) {
-            alert('Lỗi đồng bộ: ' + e.message);
-          }
+        const clientId = stateStore.getState().settings.googleClientId;
+        if (!clientId) {
+          alert('Vui lòng nhập Google Client ID trước khi kết nối.');
+          return;
+        }
+        googleAuthService.init(clientId, async (token) => {
+          this.syncModal.open();
         });
         googleAuthService.signIn();
       });
@@ -260,20 +323,51 @@ export class Settings {
       });
     }
 
-    // Sync Now
-    const syncBtn = this.container.querySelector('#btn-sync-now');
-    if (syncBtn) {
-      syncBtn.addEventListener('click', async () => {
+    // Open Sync Modal (2 Choices)
+    const openSyncBtn = this.container.querySelector('#btn-open-sync-modal');
+    if (openSyncBtn) {
+      openSyncBtn.addEventListener('click', () => {
+        this.syncModal.open();
+      });
+    }
+
+    // Quick Push
+    const quickPushBtn = this.container.querySelector('#btn-quick-push');
+    if (quickPushBtn) {
+      quickPushBtn.addEventListener('click', async () => {
         const token = googleAuthService.getValidToken();
         if (!token) {
           googleAuthService.signIn();
           return;
         }
         try {
-          await GoogleSheetsService.sync(token);
-          alert('Đã đồng bộ Google Sheets thành công!');
+          const res = await GoogleSheetsService.push(token);
+          if (window.showToast) showToast(`Đã đẩy ${res.count} giao dịch lên Google Sheets!`, 'success');
+          else alert(`Đã đẩy ${res.count} giao dịch lên Google Sheets!`);
         } catch (e) {
-          alert('Lỗi: ' + e.message);
+          alert('Lỗi đẩy dữ liệu: ' + e.message);
+        }
+      });
+    }
+
+    // Quick Pull
+    const quickPullBtn = this.container.querySelector('#btn-quick-pull');
+    if (quickPullBtn) {
+      quickPullBtn.addEventListener('click', async () => {
+        if (!confirm('⚠️ CẢNH BÁO: Thao tác này sẽ tải dữ liệu từ Google Sheets về và GHI ĐÈ dữ liệu trên máy. Bạn có chắc chắn không?')) {
+          return;
+        }
+        const token = googleAuthService.getValidToken();
+        if (!token) {
+          googleAuthService.signIn();
+          return;
+        }
+        try {
+          const res = await GoogleSheetsService.pull(token);
+          if (window.showToast) showToast(`Đã tải về ${res.txCount} giao dịch từ Google Sheets!`, 'success');
+          else alert(`Đã tải về ${res.txCount} giao dịch từ Google Sheets!`);
+        } catch (e) {
+          alert('Lỗi kéo dữ liệu: ' + e.message);
         }
       });
     }
