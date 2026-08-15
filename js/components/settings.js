@@ -107,15 +107,7 @@ export class Settings {
                     </div>
                   </div>
                   <div class="flex gap-2">
-                    <button type="button" class="btn btn-secondary" id="btn-firebase-push-all" title="Đẩy toàn bộ dữ liệu máy này lên Cloud" style="font-size: var(--font-size-xs); padding: 6px 12px;">
-                      <i data-lucide="cloud-upload" style="width: 14px; height: 14px; color: var(--primary-600);"></i>
-                      <span>Đẩy Lên Cloud</span>
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="btn-firebase-pull-all" title="Tải toàn bộ dữ liệu Cloud về máy" style="font-size: var(--font-size-xs); padding: 6px 12px;">
-                      <i data-lucide="cloud-download" style="width: 14px; height: 14px; color: #10b981;"></i>
-                      <span>Kéo Về Máy</span>
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="btn-firebase-signout" style="font-size: var(--font-size-xs); padding: 6px 12px;">
+                    <button type="button" class="btn btn-secondary" id="btn-firebase-signout" style="font-size: var(--font-size-xs); padding: 6px 14px;">
                       <i data-lucide="log-out" style="width: 14px; height: 14px;"></i>
                       <span>Đăng Xuất</span>
                     </button>
@@ -212,17 +204,19 @@ export class Settings {
                 </button>
               ` : `
                 <button type="button" class="btn btn-primary" id="btn-open-sync-modal">
-                  <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
-                  <span>Đồng Bộ (2 Lựa Chọn)</span>
+                  <i data-lucide="cloud-upload" style="width: 16px; height: 16px;"></i>
+                  <span>Sao Lưu Google Sheets (Push)</span>
                 </button>
-                <button type="button" class="btn btn-secondary" id="btn-quick-push" title="Đẩy dữ liệu lên Cloud">
+                <button type="button" class="btn btn-secondary" id="btn-quick-push" title="Đẩy dữ liệu lên Google Sheets">
                   <i data-lucide="arrow-up-circle" style="width: 16px; height: 16px; color: var(--primary-600);"></i>
-                  <span>Đẩy Lên</span>
+                  <span>Đẩy Lên Sheets</span>
                 </button>
+                <!-- Tạm thời tắt tính năng Pull Google Sheets để tránh ghi đè / xung đột với Firebase Realtime
                 <button type="button" class="btn btn-secondary" id="btn-quick-pull" title="Kéo dữ liệu về Máy">
                   <i data-lucide="arrow-down-circle" style="width: 16px; height: 16px; color: #10b981;"></i>
                   <span>Kéo Về</span>
                 </button>
+                -->
                 <button type="button" class="btn btn-secondary" id="btn-disconnect-google">
                   <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
                   <span>Đăng Xuất</span>
@@ -665,6 +659,7 @@ export class Settings {
       });
     }
 
+    /* Tạm thời tắt tính năng Pull Google Sheets
     // Quick Pull
     const quickPullBtn = this.container.querySelector('#btn-quick-pull');
     if (quickPullBtn) {
@@ -684,6 +679,7 @@ export class Settings {
         }
       });
     }
+    */
 
     // Export JSON / CSV
     this.container.querySelector('#btn-export-json')?.addEventListener('click', () => ExportImportService.exportJSON());

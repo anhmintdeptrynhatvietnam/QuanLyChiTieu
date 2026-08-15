@@ -57,25 +57,25 @@ export class SyncModal {
                 <div style="flex: 1;">
                   <div class="flex items-center justify-between">
                     <h4 style="font-size: var(--font-size-base); font-weight: 700; color: var(--text-primary);">
-                      1. Đẩy lên Google Sheets (Push)
+                      Đẩy lên Google Sheets (Push)
                     </h4>
-                    <span class="badge badge-subtle" style="font-size: 11px;">Ghi đè Cloud</span>
+                    <span class="badge badge-subtle" style="font-size: 11px;">Ghi đè Cloud Sheets</span>
                   </div>
                   <p class="text-muted" style="font-size: var(--font-size-xs); margin: 4px 0 8px 0; line-height: 1.4;">
-                    Lưu toàn bộ dữ liệu từ thiết bị này lên file Google Sheets trên Google Drive.
+                    Lưu toàn bộ dữ liệu từ thiết bị này lên file Google Sheets trên Google Drive của bạn.
                   </p>
                   <div id="sync-local-stats" class="flex gap-2" style="flex-wrap: wrap; margin-bottom: var(--space-2); font-size: 11px; color: var(--text-secondary);">
                     <!-- Dynamic stats -->
                   </div>
                   <button type="button" class="btn btn-primary w-full" id="btn-action-push" style="padding: 8px 14px; font-weight: 600;">
                     <i data-lucide="arrow-up-circle" style="width: 16px; height: 16px;"></i>
-                    <span>Bắt Đầu Đẩy Lên Cloud</span>
+                    <span>Bắt Đầu Đẩy Lên Google Sheets</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            <!-- Option 2: Pull (Cloud -> Local) -->
+            <!-- Tạm thời comment code chức năng Pull Google Sheets để tránh xung đột với Firebase Realtime
             <div class="card sync-option-card" style="border: 2px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-3); transition: all 0.2s ease; background: var(--bg-surface-elevated);">
               <div class="flex items-start gap-3">
                 <div style="background: rgba(16, 185, 129, 0.12); color: #10b981; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -91,17 +91,13 @@ export class SyncModal {
                   <p class="text-muted" style="font-size: var(--font-size-xs); margin: 4px 0 8px 0; line-height: 1.4;">
                     Tải toàn bộ dữ liệu từ Google Sheets về thay thế dữ liệu trên máy này.
                   </p>
-                  <div class="badge badge-subtle" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; margin-bottom: var(--space-2); background: var(--bg-subtle);">
-                    <i data-lucide="shield-check" style="width: 13px; height: 13px; color: #10b981;"></i>
-                    <span>Tự động lưu bản sao lưu dự phòng trước khi nạp</span>
-                  </div>
-                  <button type="button" class="btn btn-secondary w-full" id="btn-action-pull" style="padding: 8px 14px; font-weight: 600; border-color: var(--border-subtle);">
-                    <i data-lucide="arrow-down-circle" style="width: 16px; height: 16px; color: #10b981;"></i>
+                  <button type="button" class="btn btn-secondary w-full" id="btn-action-pull">
                     <span>Bắt Đầu Kéo Về Máy</span>
                   </button>
                 </div>
               </div>
             </div>
+            -->
           </div>
 
           <!-- Loading / Status indicator -->
@@ -139,8 +135,8 @@ export class SyncModal {
     // Push button
     this.modalEl.querySelector('#btn-action-push')?.addEventListener('click', () => this.handlePush());
 
-    // Pull button
-    this.modalEl.querySelector('#btn-action-pull')?.addEventListener('click', () => this.handlePull());
+    // Pull button - Tạm thời tắt
+    // this.modalEl.querySelector('#btn-action-pull')?.addEventListener('click', () => this.handlePull());
   }
 
   updateStats() {
@@ -266,6 +262,7 @@ export class SyncModal {
     }
   }
 
+  /* Tạm thời tắt tính năng Pull Google Sheets
   async handlePull() {
     const confirmMsg =
       'Thao tác này sẽ tải dữ liệu từ Google Sheets về và GHI ĐÈ TOÀN BỘ dữ liệu trên thiết bị này. ' +
@@ -307,6 +304,7 @@ export class SyncModal {
       this.setLoading(false);
     }
   }
+  */
 
   open() {
     if (!this.modalEl) this.createModalDOM();

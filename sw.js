@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.0';
+const CACHE_NAME = 'qlct-pwa-v2.2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
