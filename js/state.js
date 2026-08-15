@@ -29,9 +29,25 @@ class StateStore {
     try {
       const config = this.state.settings?.firebaseConfig || DEFAULT_FIREBASE_CONFIG;
       firebaseAuthService.init(config);
-      firebaseAuthService.onAuthChange((user) => {
+      firebaseAuthService.onAuthChange(async (user) => {
+        const lastAuthUid = localStorage.getItem('qlct_last_auth_uid');
         this.state.settings.firebaseUser = user;
+
         if (user) {
+          // If switching accounts on the same browser (from user A to user B)
+          if (lastAuthUid && lastAuthUid !== user.uid) {
+            const hasCloud = await firebaseSyncService.checkHasCloudDataForUser(user.uid);
+            if (!hasCloud) {
+              // Brand new user -> Clean default state
+              this.state.transactions = [];
+              this.state.wallets = JSON.parse(JSON.stringify(DEFAULT_WALLETS));
+              this.state.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+              this.state.budgets = [];
+              this.state.debts = [];
+              this.recalculateWalletBalances();
+            }
+          }
+          localStorage.setItem('qlct_last_auth_uid', user.uid);
           firebaseSyncService.startSync(user.uid, (table, items) => {
             this.applyRemoteState(table, items);
           });

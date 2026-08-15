@@ -221,9 +221,13 @@ class FirebaseSyncService {
    * Kiểm tra xem Cloud đã có dữ liệu nào chưa
    */
   async checkHasCloudData() {
-    if (!this.userId) return false;
+    return this.checkHasCloudDataForUser(this.userId);
+  }
+
+  async checkHasCloudDataForUser(uid) {
+    if (!uid) return false;
     this.initDb();
-    const docRef = doc(this.db, 'users', this.userId, 'data', 'transactions');
+    const docRef = doc(this.db, 'users', uid, 'data', 'transactions');
     const snap = await getDoc(docRef);
     if (snap.exists()) {
       const data = snap.data();
