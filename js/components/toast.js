@@ -8,9 +8,11 @@ export class Toast {
     if (!container) {
       container = document.createElement('div');
       container.id = 'toast-container';
-      container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none;';
       document.body.appendChild(container);
     }
+    container.style.position = 'fixed';
+    container.style.zIndex = '99999';
+    container.style.pointerEvents = 'none';
 
     const toast = document.createElement('div');
     toast.className = 'card';

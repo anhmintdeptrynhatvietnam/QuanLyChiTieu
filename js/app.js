@@ -30,6 +30,8 @@ class App {
   }
 
   init() {
+    window.setAppTheme = (theme) => this.applyTheme(theme);
+    window.getAppTheme = () => this.theme;
     this.applyTheme(this.theme);
     this.initComponents();
     this.setupNavigation();
@@ -94,6 +96,10 @@ class App {
     // Charts read CSS variables at creation time, so they go stale on toggle
     if (this.currentView === 'analytics' && this.analytics) {
       this.analytics.render();
+    }
+
+    if (this.currentView === 'settings' && this.settings) {
+      this.settings.render();
     }
   }
 

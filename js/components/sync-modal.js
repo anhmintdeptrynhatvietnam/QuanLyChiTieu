@@ -27,7 +27,7 @@ export class SyncModal {
     if (existing) existing.remove();
 
     const modalHTML = `
-      <div id="sync-choice-modal" class="modal-overlay" style="z-index: 1050;">
+      <div id="sync-choice-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 520px; width: 92%; max-height: 90vh; overflow-y: auto;">
           <!-- Header -->
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-3);">

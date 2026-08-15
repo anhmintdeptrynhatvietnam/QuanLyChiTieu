@@ -28,6 +28,7 @@ export class Settings {
     const syncStatus = state.syncStatus;
     const hasBackup = GoogleSheetsService.hasPrePullBackup();
     const backupInfo = hasBackup ? GoogleSheetsService.getPrePullBackupInfo() : null;
+    const currentTheme = document.documentElement.getAttribute('data-theme') || (typeof window.getAppTheme === 'function' ? window.getAppTheme() : localStorage.getItem('theme')) || 'light';
 
     this.container.innerHTML = `
       <div class="flex flex-col gap-6">
@@ -187,6 +188,25 @@ export class Settings {
           </div>
         </div>
 
+        <!-- Theme Mode Card (Compact) -->
+        <div class="card" style="padding: var(--space-4);">
+          <div class="flex items-center justify-between" style="margin-bottom: var(--space-3);">
+            <h3 style="font-size: var(--font-size-base); font-weight: 600;">Giao Diện & Chủ Đề</h3>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2);">
+            <button type="button" class="btn ${currentTheme === 'light' ? 'btn-primary' : 'btn-secondary'} btn-set-theme" data-theme-val="light" style="padding: 10px 12px; height: auto; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; border-radius: var(--radius-md);">
+              <i data-lucide="sun" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+              <span style="font-weight: 600;">Chế độ Sáng</span>
+            </button>
+
+            <button type="button" class="btn ${currentTheme === 'dark' ? 'btn-primary' : 'btn-secondary'} btn-set-theme" data-theme-val="dark" style="padding: 10px 12px; height: auto; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; border-radius: var(--radius-md);">
+              <i data-lucide="moon" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+              <span style="font-weight: 600;">Chế độ Tối</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Mobile App / PWA Install Guide Card -->
         <div class="card" style="border-left: 4px solid var(--primary-500);">
           <div class="flex items-center gap-3" style="margin-bottom: var(--space-3);">
@@ -274,6 +294,21 @@ export class Settings {
   bindEvents() {}
 
   bindCardEvents() {
+    // Theme Switch Buttons
+    this.container.querySelectorAll('.btn-set-theme').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const themeVal = e.currentTarget.getAttribute('data-theme-val');
+        if (typeof window.setAppTheme === 'function') {
+          window.setAppTheme(themeVal);
+        } else {
+          document.documentElement.setAttribute('data-theme', themeVal);
+          localStorage.setItem('theme', themeVal);
+        }
+        showToast(`Đã chuyển sang ${themeVal === 'dark' ? 'Chế độ Tối 🌙' : 'Chế độ Sáng ☀️'}`, 'info');
+        this.render();
+      });
+    });
+
     // Add Category
     const addCatBtn = this.container.querySelector('#btn-add-category');
     if (addCatBtn) {
