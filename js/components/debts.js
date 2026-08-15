@@ -4,6 +4,9 @@
 import { stateStore } from '../state.js';
 import { formatCurrency, formatNumber, parseFormattedNumber, formatDate } from '../utils/formatters.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { attachModalA11y } from '../utils/modal-a11y.js';
+import { confirmDialog } from './confirm-dialog.js';
+import { showToast } from './toast.js';
 
 export class Debts {
   constructor(containerId = 'view-debts') {
@@ -27,7 +30,7 @@ export class Debts {
         <div class="modal-content">
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
             <h3 id="debt-modal-title">Thêm Khoản Vay / Nợ Mới</h3>
-            <button type="button" class="btn btn-icon" id="btn-close-debt-modal">
+            <button type="button" class="btn btn-icon" id="btn-close-debt-modal" aria-label="Đóng">
               <i data-lucide="x" style="width: 18px; height: 18px;"></i>
             </button>
           </div>
@@ -36,8 +39,8 @@ export class Debts {
             <div class="form-group">
               <label class="form-label">Loại giao dịch *</label>
               <select id="debt-type" class="form-select">
-                <option value="lend">🔵 Cho vay / Mua hộ (Người khác nợ tôi)</option>
-                <option value="borrow">🟠 Đi vay / Mượn tiền (Tôi nợ người khác)</option>
+                <option value="lend">Cho vay / Mua hộ (Người khác nợ tôi)</option>
+                <option value="borrow">Đi vay / Mượn tiền (Tôi nợ người khác)</option>
               </select>
             </div>
 
@@ -81,7 +84,7 @@ export class Debts {
         <div class="modal-content">
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
             <h3 id="repayment-modal-title">Ghi Nhận Thu Nợ</h3>
-            <button type="button" class="btn btn-icon" id="btn-close-repayment-modal">
+            <button type="button" class="btn btn-icon" id="btn-close-repayment-modal" aria-label="Đóng">
               <i data-lucide="x" style="width: 18px; height: 18px;"></i>
             </button>
           </div>
@@ -126,6 +129,9 @@ export class Debts {
 
     this.debtModalEl = document.getElementById('debt-modal');
     this.repaymentModalEl = document.getElementById('repayment-modal');
+
+    attachModalA11y(this.debtModalEl, 'debt-modal-title', () => this.closeDebtModal());
+    attachModalA11y(this.repaymentModalEl, 'repayment-modal-title', () => this.closeRepaymentModal());
   }
 
   render() {
@@ -174,11 +180,11 @@ export class Debts {
         <div class="card flex items-center justify-between" style="flex-wrap: wrap; gap: var(--space-4);">
           <!-- Filters -->
           <div class="flex items-center gap-2" style="flex-wrap: wrap;">
-            <button type="button" class="badge filter-btn ${this.activeFilter === 'all' ? 'badge-primary' : 'badge-subtle'}" data-filter="all">Tất cả (${debts.length})</button>
-            <button type="button" class="badge filter-btn ${this.activeFilter === 'lend' ? 'badge-primary' : 'badge-subtle'}" data-filter="lend">Cho vay</button>
-            <button type="button" class="badge filter-btn ${this.activeFilter === 'borrow' ? 'badge-primary' : 'badge-subtle'}" data-filter="borrow">Đi vay</button>
-            <button type="button" class="badge filter-btn ${this.activeFilter === 'unpaid' ? 'badge-primary' : 'badge-subtle'}" data-filter="unpaid">Chưa xong</button>
-            <button type="button" class="badge filter-btn ${this.activeFilter === 'paid' ? 'badge-primary' : 'badge-subtle'}" data-filter="paid">Đã hoàn tất</button>
+            <button type="button" class="chip filter-btn ${this.activeFilter === 'all' ? 'active' : ''}" data-filter="all">Tất cả (${debts.length})</button>
+            <button type="button" class="chip filter-btn ${this.activeFilter === 'lend' ? 'active' : ''}" data-filter="lend">Cho vay</button>
+            <button type="button" class="chip filter-btn ${this.activeFilter === 'borrow' ? 'active' : ''}" data-filter="borrow">Đi vay</button>
+            <button type="button" class="chip filter-btn ${this.activeFilter === 'unpaid' ? 'active' : ''}" data-filter="unpaid">Chưa xong</button>
+            <button type="button" class="chip filter-btn ${this.activeFilter === 'paid' ? 'active' : ''}" data-filter="paid">Đã hoàn tất</button>
           </div>
 
           <!-- Add Button -->
@@ -223,13 +229,13 @@ export class Debts {
       if (debt.dueDate < today) isOverdue = true;
     }
 
-    const typeBadge = isLend 
-      ? `<span class="badge badge-income">🔵 Cho vay / Mua hộ</span>`
-      : `<span class="badge badge-expense">🟠 Đi vay mượn</span>`;
+    const typeBadge = isLend
+      ? `<span class="badge badge-income"><i data-lucide="circle" style="width: 10px; height: 10px; fill: currentColor;"></i> Cho vay / Mua hộ</span>`
+      : `<span class="badge badge-expense"><i data-lucide="circle" style="width: 10px; height: 10px; fill: currentColor;"></i> Đi vay mượn</span>`;
 
-    const statusBadge = isPaid 
-      ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">✓ Đã hoàn tất</span>`
-      : (isPartiallyPaid 
+    const statusBadge = isPaid
+      ? `<span class="badge badge-income"><i data-lucide="check" style="width: 12px; height: 12px;"></i> Đã hoàn tất</span>`
+      : (isPartiallyPaid
           ? `<span class="badge badge-subtle" style="color: var(--primary-600);">Đã trả ${percent}%</span>`
           : `<span class="badge badge-subtle">Chưa trả</span>`);
 
@@ -243,11 +249,11 @@ export class Debts {
               ${statusBadge}
             </div>
             <div class="flex items-center gap-1">
-              <button type="button" class="btn btn-icon btn-edit-debt" data-id="${debt.id}" title="Sửa" style="width: 28px; height: 28px;">
-                <i data-lucide="edit-2" style="width: 13px; height: 13px;"></i>
+              <button type="button" class="btn btn-icon btn-edit-debt" data-id="${debt.id}" title="Sửa" aria-label="Sửa khoản nợ">
+                <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
               </button>
-              <button type="button" class="btn btn-icon btn-delete-debt" data-id="${debt.id}" title="Xóa" style="width: 28px; height: 28px; color: var(--expense-primary);">
-                <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+              <button type="button" class="btn btn-icon btn-delete-debt" data-id="${debt.id}" title="Xóa" aria-label="Xóa khoản nợ" style="color: var(--expense-primary);">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
               </button>
             </div>
           </div>
@@ -265,18 +271,18 @@ export class Debts {
 
           <!-- Progress Bar -->
           <div style="background: var(--bg-subtle); border-radius: 9999px; height: 6px; overflow: hidden; margin: var(--space-2) 0;">
-            <div style="background: ${isPaid ? '#10b981' : 'var(--primary-500)'}; width: ${percent}%; height: 100%; transition: width 0.3s ease;"></div>
+            <div style="background: ${isPaid ? 'var(--income-primary)' : 'var(--primary-500)'}; width: ${percent}%; height: 100%; transition: width 0.3s ease;"></div>
           </div>
 
           <!-- Dates & Note -->
           <div style="margin-top: var(--space-3); font-size: var(--font-size-xs);" class="flex flex-col gap-1 text-muted">
-            <div>📅 Ngày tạo: <strong>${formatDate(debt.createdAt)}</strong></div>
+            <div class="flex items-center gap-1"><i data-lucide="calendar" style="width: 12px; height: 12px;"></i> Ngày tạo: <strong>${formatDate(debt.createdAt)}</strong></div>
             ${debt.dueDate ? `
-              <div class="${isOverdue ? 'text-expense font-bold' : ''}">
-                ⏰ Hạn trả: <strong>${formatDate(debt.dueDate)}</strong> ${isOverdue ? '(Quá hạn!)' : ''}
+              <div class="flex items-center gap-1 ${isOverdue ? 'text-expense font-bold' : ''}">
+                <i data-lucide="clock" style="width: 12px; height: 12px;"></i> Hạn trả: <strong>${formatDate(debt.dueDate)}</strong> ${isOverdue ? '(Quá hạn!)' : ''}
               </div>
             ` : ''}
-            ${debt.note ? `<div style="font-style: italic; margin-top: 2px;">📝 "${escapeHtml(debt.note)}"</div>` : ''}
+            ${debt.note ? `<div class="flex items-center gap-1" style="font-style: italic; margin-top: 2px;"><i data-lucide="pencil" style="width: 12px; height: 12px; flex-shrink: 0;"></i> "${escapeHtml(debt.note)}"</div>` : ''}
           </div>
 
           <!-- Repayments History -->
@@ -303,8 +309,8 @@ export class Debts {
               <span>${isLend ? 'Thu Nợ Đợt Này' : 'Trả Nợ Đợt Này'}</span>
             </button>
           ` : `
-            <div style="text-align: center; font-size: 12px; color: var(--income-primary); font-weight: 600; padding: 4px 0;">
-              ✨ Khoản nợ đã thanh toán xong
+            <div class="flex items-center justify-center gap-1" style="font-size: 12px; color: var(--income-primary); font-weight: 600; padding: 4px 0;">
+              <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Khoản nợ đã thanh toán xong
             </div>
           `}
         </div>
@@ -385,9 +391,10 @@ export class Debts {
     });
 
     this.container.querySelectorAll('.btn-delete-debt').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
-        if (confirm('Bạn có chắc chắn muốn xóa khoản nợ này? Số dư ví sẽ được hoàn lại.')) {
+        const confirmed = await confirmDialog('Bạn có chắc chắn muốn xóa khoản nợ này? Số dư ví sẽ được hoàn lại.', { danger: true });
+        if (confirmed) {
           stateStore.deleteDebt(id);
         }
       });
@@ -486,7 +493,7 @@ export class Debts {
     const note = document.getElementById('debt-note').value.trim();
 
     if (!personName) {
-      alert('Vui lòng nhập tên người liên quan');
+      showToast('Vui lòng nhập tên người liên quan', 'error');
       return;
     }
 
@@ -494,7 +501,7 @@ export class Debts {
       stateStore.updateDebt(this.selectedDebtId, { personName, dueDate, note });
     } else {
       if (amount <= 0) {
-        alert('Vui lòng nhập số tiền hợp lệ lớn hơn 0');
+        showToast('Vui lòng nhập số tiền hợp lệ lớn hơn 0', 'error');
         return;
       }
       stateStore.addDebt({ personName, type, amount, walletId, dueDate, note });
@@ -560,7 +567,7 @@ export class Debts {
     const note = document.getElementById('repayment-note').value.trim();
 
     if (amount <= 0) {
-      alert('Vui lòng nhập số tiền thanh toán lớn hơn 0');
+      showToast('Vui lòng nhập số tiền thanh toán lớn hơn 0', 'error');
       return;
     }
 

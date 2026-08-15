@@ -69,7 +69,7 @@ export class Analytics {
         </div>
 
         <!-- Charts Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-6);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6);">
           <!-- Category Doughnut Chart -->
           <div class="card">
             <h3 style="font-size: var(--font-size-base); margin-bottom: var(--space-4);">Cơ Cấu Chi Tiêu (${formatMonthYearDisplay(this.selectedMonth)})</h3>
@@ -143,6 +143,8 @@ export class Analytics {
   initCharts(expenseMap, state) {
     if (!window.Chart) return;
 
+    const themeTextColor = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+
     // 1. Render Doughnut Chart
     const doughnutCanvas = document.getElementById('chart-category-doughnut');
     if (doughnutCanvas) {
@@ -181,7 +183,7 @@ export class Analytics {
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Inter' } } } }
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Inter' }, color: themeTextColor } } }
         }
       });
     }
@@ -225,8 +227,11 @@ export class Analytics {
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Inter' } } } },
-          scales: { y: { beginAtZero: true, ticks: { callback: (v) => formatCurrency(v).replace('₫', '') } } }
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Inter' }, color: themeTextColor } } },
+          scales: {
+            x: { ticks: { color: themeTextColor } },
+            y: { beginAtZero: true, ticks: { color: themeTextColor, callback: (v) => formatCurrency(v).replace('₫', '') } }
+          }
         }
       });
     }

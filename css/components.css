@@ -68,18 +68,32 @@
 }
 
 .btn-icon {
-  width: 40px;
-  height: 40px;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
   padding: 0;
   border-radius: var(--radius-lg);
   background-color: var(--bg-subtle);
   color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .btn-icon:hover {
   background-color: var(--bg-active);
   color: var(--text-primary);
+}
+
+/* Decorative, non-interactive icon circle (do not use .btn-icon on a non-<button> element) */
+.icon-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* Form Controls */
@@ -130,6 +144,36 @@
 .badge-warning { background-color: var(--warning-bg); color: var(--warning-text); }
 .badge-subtle { background-color: var(--bg-subtle); color: var(--text-secondary); }
 .badge-primary { background-color: var(--primary-600); color: var(--text-inverse); }
+
+/* Chips: interactive tab/filter/quick-select controls (use instead of .badge when clickable) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 40px;
+  padding: 0.5rem 1rem;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.chip:hover {
+  background-color: var(--bg-active);
+  color: var(--text-primary);
+}
+
+.chip.active {
+  background-color: var(--primary-600);
+  color: var(--text-inverse);
+  border-color: transparent;
+}
 
 /* Floating Action Button (FAB) */
 .fab-btn {
@@ -193,4 +237,216 @@
 
 .modal-overlay.active .modal-content {
   transform: translateY(0);
+}
+
+/* Mobile: dock modals as a bottom sheet instead of a centered card */
+@media (max-width: 768px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    width: 100%;
+    max-height: 85vh;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    transform: translateY(100%);
+  }
+
+  .modal-overlay.active .modal-content {
+    transform: translateY(0);
+  }
+}
+
+/* Loading Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--primary-600);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Recent-item list: adds a divider + breathing room between rows instead of a bare flex gap */
+.recent-tx-list > div + div {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Danger Zone: visually separates destructive actions from routine ones */
+.danger-zone {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background-color: var(--expense-bg);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+}
+
+/* Search Input Wrapper */
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-wrapper .form-input {
+  padding-left: 36px;
+  padding-right: 34px;
+}
+
+.search-input-wrapper .search-clear-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  transition: color var(--transition-fast);
+}
+
+.search-input-wrapper .search-clear-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Chip Group (horizontal scrolling) */
+.chip-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.chip-group::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-sm {
+  min-height: 32px;
+  padding: 0.25rem 0.75rem;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.chip-sm:hover {
+  background-color: var(--bg-active);
+  color: var(--text-primary);
+}
+
+.chip-sm.active {
+  background-color: var(--primary-600);
+  color: var(--text-inverse);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+/* Compact Icon Button */
+.btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-icon-sm:hover {
+  background-color: var(--bg-active);
+  color: var(--text-primary);
+}
+
+/* Transaction Item Layout */
+.tx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 6px 4px;
+  border-radius: var(--radius-lg);
+  transition: background-color var(--transition-fast);
+}
+
+.tx-item:hover {
+  background-color: var(--bg-subtle);
+}
+
+.tx-item-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.tx-item-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.tx-item-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tx-item-subtitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.tx-item-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
 }

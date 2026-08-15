@@ -4,6 +4,9 @@
 import { stateStore } from '../state.js';
 import { formatNumber, parseFormattedNumber } from '../utils/formatters.js';
 import { getCurrentDateFormatted, escapeHtml } from '../utils/helpers.js';
+import { showToast } from './toast.js';
+import { attachModalA11y } from '../utils/modal-a11y.js';
+import { promptDialog } from './confirm-dialog.js';
 
 export class TransactionModal {
   constructor() {
@@ -11,6 +14,7 @@ export class TransactionModal {
     this.currentTxId = null;
     this.activeType = 'expense'; // 'expense' | 'income' | 'transfer'
     this.init();
+    attachModalA11y(this.modalEl, 'transaction-modal-title', () => this.close());
   }
 
   init() {
@@ -23,27 +27,43 @@ export class TransactionModal {
       <div id="transaction-modal" class="modal-overlay">
         <div class="modal-content">
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
-            <h3 id="tx-modal-title">Ghi Chép Giao Dịch</h3>
-            <button type="button" class="btn btn-icon" id="btn-close-tx-modal">
+            <h3 id="transaction-modal-title">Ghi Chép Giao Dịch</h3>
+            <button type="button" class="btn btn-icon" id="btn-close-tx-modal" aria-label="Đóng">
               <i data-lucide="x" style="width: 18px; height: 18px;"></i>
             </button>
           </div>
 
           <!-- Type Tabs -->
           <div class="flex gap-1" style="margin-bottom: var(--space-4); background: var(--bg-subtle); padding: 4px; border-radius: var(--radius-lg); overflow-x: auto;">
-            <button type="button" class="btn w-full tx-type-btn active" data-type="expense" style="padding: 7px 4px; font-size: 13px;">💸 Chi Tiêu</button>
-            <button type="button" class="btn w-full tx-type-btn" data-type="income" style="padding: 7px 4px; font-size: 13px;">💰 Thu Nhập</button>
-            <button type="button" class="btn w-full tx-type-btn" data-type="transfer" style="padding: 7px 4px; font-size: 13px;">🔄 Chuyển Tiền</button>
-            <button type="button" class="btn w-full tx-type-btn" data-type="debt" style="padding: 7px 4px; font-size: 13px;">🤝 Vay / Nợ</button>
+            <button type="button" class="btn w-full tx-type-btn active" data-type="expense" style="padding: 7px 4px; font-size: 13px;">
+              <i data-lucide="trending-down" style="width: 14px; height: 14px; color: var(--expense-primary);"></i> Chi Tiêu
+            </button>
+            <button type="button" class="btn w-full tx-type-btn" data-type="income" style="padding: 7px 4px; font-size: 13px;">
+              <i data-lucide="trending-up" style="width: 14px; height: 14px; color: var(--income-primary);"></i> Thu Nhập
+            </button>
+            <button type="button" class="btn w-full tx-type-btn" data-type="transfer" style="padding: 7px 4px; font-size: 13px;">
+              <i data-lucide="arrow-right-left" style="width: 14px; height: 14px; color: var(--transfer-primary);"></i> Chuyển Tiền
+            </button>
+            <button type="button" class="btn w-full tx-type-btn" data-type="debt" style="padding: 7px 4px; font-size: 13px;">
+              <i data-lucide="handshake" style="width: 14px; height: 14px; color: var(--primary-500);"></i> Vay / Nợ
+            </button>
           </div>
 
           <!-- Debt Sub-type Selector (Visible only when type === 'debt') -->
           <div id="tx-debt-actions" class="hidden" style="margin-bottom: var(--space-4); background: rgba(59, 130, 246, 0.08); padding: var(--space-2); border-radius: var(--radius-md);">
             <div class="flex gap-1" style="flex-wrap: wrap;">
-              <button type="button" class="badge debt-action-btn badge-primary" data-debt-action="lend" style="padding: 5px 8px; cursor: pointer;">🔵 Cho vay / Mua hộ</button>
-              <button type="button" class="badge debt-action-btn badge-subtle" data-debt-action="collect" style="padding: 5px 8px; cursor: pointer;">🟢 Thu nợ</button>
-              <button type="button" class="badge debt-action-btn badge-subtle" data-debt-action="borrow" style="padding: 5px 8px; cursor: pointer;">🟠 Đi vay</button>
-              <button type="button" class="badge debt-action-btn badge-subtle" data-debt-action="repay" style="padding: 5px 8px; cursor: pointer;">🔴 Trả nợ</button>
+              <button type="button" class="chip debt-action-btn active" data-debt-action="lend" style="padding: 5px 10px;">
+                <i data-lucide="circle" fill="currentColor" stroke="none" style="width: 8px; height: 8px; color: var(--primary-500);"></i> Cho vay / Mua hộ
+              </button>
+              <button type="button" class="chip debt-action-btn" data-debt-action="collect" style="padding: 5px 10px;">
+                <i data-lucide="circle" fill="currentColor" stroke="none" style="width: 8px; height: 8px; color: var(--income-primary);"></i> Thu nợ
+              </button>
+              <button type="button" class="chip debt-action-btn" data-debt-action="borrow" style="padding: 5px 10px;">
+                <i data-lucide="circle" fill="currentColor" stroke="none" style="width: 8px; height: 8px; color: var(--warning-primary);"></i> Đi vay
+              </button>
+              <button type="button" class="chip debt-action-btn" data-debt-action="repay" style="padding: 5px 10px;">
+                <i data-lucide="circle" fill="currentColor" stroke="none" style="width: 8px; height: 8px; color: var(--expense-primary);"></i> Trả nợ
+              </button>
             </div>
             <small id="tx-debt-desc" class="text-muted" style="display: block; margin-top: 4px; font-size: 11px;">
               Tiền xuất ra cho vay, không tính vào Chi tiêu tháng.
@@ -56,10 +76,10 @@ export class TransactionModal {
               <label class="form-label">Số tiền (VNĐ) *</label>
               <input type="text" id="tx-amount" class="form-input font-bold" placeholder="0" style="font-size: 1.35rem; color: var(--primary-600);" required>
               <div class="flex gap-2" style="margin-top: 6px; flex-wrap: wrap;">
-                <button type="button" class="badge badge-subtle chip-add" data-add="50000">+50k</button>
-                <button type="button" class="badge badge-subtle chip-add" data-add="100000">+100k</button>
-                <button type="button" class="badge badge-subtle chip-add" data-add="500000">+500k</button>
-                <button type="button" class="badge badge-subtle chip-add" data-add="1000000">+1Tr</button>
+                <button type="button" class="chip chip-add" data-add="50000">+50k</button>
+                <button type="button" class="chip chip-add" data-add="100000">+100k</button>
+                <button type="button" class="chip chip-add" data-add="500000">+500k</button>
+                <button type="button" class="chip chip-add" data-add="1000000">+1Tr</button>
               </div>
             </div>
 
@@ -147,12 +167,15 @@ export class TransactionModal {
 
     // Quick add new category
     if (quickAddCatBtn) {
-      quickAddCatBtn.addEventListener('click', () => {
+      quickAddCatBtn.addEventListener('click', async () => {
         const typeName = this.activeType === 'income' ? 'thu nhập' : 'chi tiêu';
-        const name = prompt(`Nhập tên loại ${typeName} mới (Ví dụ: Thể thao, Tiền điện nước, Học phí...):`);
-        if (name && name.trim()) {
+        const name = await promptDialog(`Nhập tên loại ${typeName} mới:`, {
+          title: 'Thêm danh mục mới',
+          placeholder: 'Ví dụ: Thể thao, Tiền điện nước, Học phí...'
+        });
+        if (name) {
           const newCat = stateStore.addCategory({
-            name: name.trim(),
+            name,
             type: this.activeType
           });
           this.updateFormFields();
@@ -177,12 +200,8 @@ export class TransactionModal {
     const debtActionBtns = this.modalEl.querySelectorAll('.debt-action-btn');
     debtActionBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        debtActionBtns.forEach(b => {
-          b.classList.remove('badge-primary');
-          b.classList.add('badge-subtle');
-        });
-        btn.classList.remove('badge-subtle');
-        btn.classList.add('badge-primary');
+        debtActionBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
         this.debtAction = btn.getAttribute('data-debt-action');
         this.updateDebtFields();
       });
@@ -343,7 +362,7 @@ export class TransactionModal {
   open(txId = null) {
     this.currentTxId = txId;
     const state = stateStore.getState();
-    const titleEl = document.getElementById('tx-modal-title');
+    const titleEl = document.getElementById('transaction-modal-title');
     const dateInput = document.getElementById('tx-date');
     const amountInput = document.getElementById('tx-amount');
     const noteInput = document.getElementById('tx-note');
@@ -394,7 +413,7 @@ export class TransactionModal {
   handleSubmit() {
     const amount = parseFormattedNumber(document.getElementById('tx-amount').value);
     if (amount <= 0) {
-      alert('Vui lòng nhập số tiền lớn hơn 0');
+      showToast('Vui lòng nhập số tiền lớn hơn 0', 'error');
       return;
     }
 
@@ -407,7 +426,7 @@ export class TransactionModal {
       if (this.debtAction === 'lend' || this.debtAction === 'borrow') {
         const personName = document.getElementById('tx-debt-person-name').value.trim();
         if (!personName) {
-          alert('Vui lòng nhập tên người vay / cho vay');
+          showToast('Vui lòng nhập tên người vay / cho vay', 'error');
           return;
         }
         const dueDate = document.getElementById('tx-debt-due-date').value || null;
@@ -423,7 +442,7 @@ export class TransactionModal {
         // collect or repay
         const selectedDebtId = document.getElementById('tx-debt-select').value;
         if (!selectedDebtId) {
-          alert('Vui lòng chọn khoản nợ cần thanh toán');
+          showToast('Vui lòng chọn khoản nợ cần thanh toán', 'error');
           return;
         }
         stateStore.recordRepayment(selectedDebtId, {
@@ -441,7 +460,7 @@ export class TransactionModal {
     const toWalletId = this.activeType === 'transfer' ? document.getElementById('tx-to-wallet').value : null;
 
     if (this.activeType === 'transfer' && walletId === toWalletId) {
-      alert('Ví nhận tiền phải khác Ví nguồn');
+      showToast('Ví nhận tiền phải khác Ví nguồn', 'error');
       return;
     }
 

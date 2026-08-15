@@ -118,7 +118,7 @@ export class Dashboard {
         ` : ''}
 
         <!-- 2 Column Section: Recent Transactions & Top Spending -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-6);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6);">
           <!-- Recent Transactions Card -->
           <div class="card">
             <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-3);">
@@ -128,7 +128,7 @@ export class Dashboard {
               </button>
             </div>
 
-            <div class="flex flex-col gap-3">
+            <div class="recent-tx-list">
               ${recentTx.length === 0 ? '<p class="text-muted" style="text-align: center; padding: 20px 0;">Chưa có giao dịch</p>' : ''}
               ${recentTx.map(tx => this.renderRecentItem(tx, state)).join('')}
             </div>
@@ -138,7 +138,9 @@ export class Dashboard {
           <div class="card">
             <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-3);">
               <h3 style="font-size: var(--font-size-base); font-weight: 600;">Cơ Cấu Chi Tiêu Tháng</h3>
-              <span class="badge badge-subtle font-medium">${Object.keys(expenseByCategory).length} danh mục</span>
+              <button type="button" class="btn btn-secondary" id="btn-goto-analytics" style="padding: 4px 10px; font-size: var(--font-size-xs);">
+                Xem biểu đồ →
+              </button>
             </div>
 
             <div class="flex flex-col gap-3">
@@ -163,7 +165,7 @@ export class Dashboard {
     return `
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <div class="btn-icon" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--bg-subtle);">
+          <div class="icon-avatar" style="width: 34px; height: 34px;">
             <i data-lucide="${cat?.icon || (isTransfer ? 'arrow-right-left' : 'shopping-bag')}" style="width: 16px; height: 16px; color: ${cat?.color || 'inherit'};"></i>
           </div>
           <div>
@@ -212,6 +214,13 @@ export class Dashboard {
     if (gotoDebtsBtn && window.appInstance) {
       gotoDebtsBtn.addEventListener('click', () => {
         window.appInstance.switchView('debts');
+      });
+    }
+
+    const gotoAnalyticsBtn = this.container.querySelector('#btn-goto-analytics');
+    if (gotoAnalyticsBtn && window.appInstance) {
+      gotoAnalyticsBtn.addEventListener('click', () => {
+        window.appInstance.switchView('analytics');
       });
     }
   }

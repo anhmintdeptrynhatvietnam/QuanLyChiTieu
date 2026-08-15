@@ -2,6 +2,7 @@
  * Google Identity Services (GIS) OAuth 2.0 Client Flow
  */
 import { stateStore } from '../state.js';
+import { showToast } from '../components/toast.js';
 
 const STORAGE_KEY_TOKEN = 'quanlythuchi_google_access_token';
 const STORAGE_KEY_EXPIRES = 'quanlythuchi_google_token_expires_at';
@@ -84,7 +85,7 @@ export class GoogleAuthService {
     const clientId = state.settings.googleClientId;
 
     if (!clientId) {
-      alert('Vui lòng nhập Google Client ID trong phần Cài đặt trước!');
+      showToast('Vui lòng nhập Google Client ID trong phần Cài đặt trước!', 'error');
       return;
     }
 
@@ -96,7 +97,7 @@ export class GoogleAuthService {
       // Dùng prompt: '' để Google tự nhận diện phiên đã cấp quyền mà không bắt xác nhận lại
       this.tokenClient.requestAccessToken({ prompt: promptMode });
     } else {
-      alert('Google Identity Services SDK chưa sẵn sàng. Vui lòng kiểm tra kết nối mạng!');
+      showToast('Google Identity Services SDK chưa sẵn sàng. Vui lòng kiểm tra kết nối mạng!', 'error');
     }
   }
 

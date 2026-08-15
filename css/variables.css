@@ -81,6 +81,9 @@
   --sidebar-width: 260px;
   --header-height: 64px;
   --mobile-nav-height: 68px;
+
+  /* Accessibility */
+  --touch-target-min: 44px;
 }
 
 [data-theme="dark"] {

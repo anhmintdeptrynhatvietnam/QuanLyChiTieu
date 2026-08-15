@@ -144,12 +144,15 @@
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: var(--font-size-xs);
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 6px 2px;
   border-radius: var(--radius-md);
   transition: color var(--transition-fast);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .mobile-nav-item.active {

@@ -4,6 +4,7 @@
 import { stateStore } from '../state.js';
 import { formatCurrency, formatNumber, parseFormattedNumber, getMonthYear, formatMonthYearDisplay } from '../utils/formatters.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { attachModalA11y } from '../utils/modal-a11y.js';
 
 export class Budgets {
   constructor(containerId = 'view-budgets') {
@@ -31,7 +32,7 @@ export class Budgets {
         <div class="modal-content">
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
             <h3 id="budget-modal-title">Đặt Hạn Mức Chi Tiêu</h3>
-            <button type="button" class="btn btn-icon" id="btn-close-budget-modal">
+            <button type="button" class="btn btn-icon" id="btn-close-budget-modal" aria-label="Đóng">
               <i data-lucide="x" style="width: 18px; height: 18px;"></i>
             </button>
           </div>
@@ -63,6 +64,7 @@ export class Budgets {
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     this.modalEl = document.getElementById('budget-modal');
+    attachModalA11y(this.modalEl, 'budget-modal-title', () => this.closeModal());
   }
 
   render() {
@@ -137,7 +139,7 @@ export class Budgets {
       <div class="card" style="padding: var(--space-4);">
         <div class="flex items-center justify-between" style="margin-bottom: var(--space-2);">
           <div class="flex items-center gap-3">
-            <div class="btn-icon" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-subtle);">
+            <div class="icon-avatar" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-subtle);">
               <i data-lucide="${category.icon || 'tag'}" style="width: 18px; height: 18px; color: ${category.color};"></i>
             </div>
             <div>

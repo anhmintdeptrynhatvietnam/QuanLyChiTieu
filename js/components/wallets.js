@@ -4,6 +4,9 @@
 import { stateStore } from '../state.js';
 import { formatCurrency, formatNumber, parseFormattedNumber } from '../utils/formatters.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { attachModalA11y } from '../utils/modal-a11y.js';
+import { confirmDialog } from './confirm-dialog.js';
+import { showToast } from './toast.js';
 
 export class Wallets {
   constructor(containerId = 'view-wallets') {
@@ -15,6 +18,7 @@ export class Wallets {
 
   init() {
     this.createModalDOM();
+    attachModalA11y(this.modalEl, 'wallet-modal-title', () => this.closeModal());
     this.render();
     this.bindEvents();
     stateStore.subscribe((event) => {
@@ -30,7 +34,7 @@ export class Wallets {
         <div class="modal-content">
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
             <h3 id="wallet-modal-title">Thêm Ví Mới</h3>
-            <button type="button" class="btn btn-icon" id="btn-close-wallet-modal">
+            <button type="button" class="btn btn-icon" id="btn-close-wallet-modal" aria-label="Đóng">
               <i data-lucide="x" style="width: 18px; height: 18px;"></i>
             </button>
           </div>
@@ -135,12 +139,12 @@ export class Wallets {
             <div class="badge badge-subtle font-medium">${typeLabel}</div>
             ${isCredit ? '<span class="badge badge-subtle" style="font-size: 10px; color: var(--text-muted);">Không tính tài sản</span>' : ''}
           </div>
-          <div class="flex items-center gap-1">
-            <button type="button" class="btn btn-icon btn-edit-wallet" data-id="${wallet.id}" title="Sửa" style="width: 28px; height: 28px;">
-              <i data-lucide="edit-2" style="width: 13px; height: 13px;"></i>
+          <div class="flex items-center gap-2">
+            <button type="button" class="btn btn-icon btn-edit-wallet" data-id="${wallet.id}" title="Sửa" aria-label="Sửa ví ${escapeHtml(wallet.name)}">
+              <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
             </button>
-            <button type="button" class="btn btn-icon btn-delete-wallet" data-id="${wallet.id}" title="Xóa" style="width: 28px; height: 28px; color: var(--expense-primary);">
-              <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+            <button type="button" class="btn btn-icon btn-delete-wallet" data-id="${wallet.id}" title="Xóa" aria-label="Xóa ví ${escapeHtml(wallet.name)}" style="color: var(--expense-primary);">
+              <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
             </button>
           </div>
         </div>
@@ -215,11 +219,12 @@ export class Wallets {
     });
 
     this.container.querySelectorAll('.btn-delete-wallet').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
-        if (confirm('Bạn có chắc chắn muốn xóa ví này?')) {
+        const confirmed = await confirmDialog('Bạn có chắc chắn muốn xóa ví này?', { danger: true });
+        if (confirmed) {
           const res = stateStore.deleteWallet(id);
-          if (!res.success) alert(res.reason);
+          if (!res.success) showToast(res.reason, 'error');
         }
       });
     });
@@ -264,7 +269,7 @@ export class Wallets {
     const initialBalance = parseFormattedNumber(document.getElementById('wallet-initial-balance').value);
 
     if (!name) {
-      alert('Vui lòng nhập tên ví');
+      showToast('Vui lòng nhập tên ví', 'error');
       return;
     }
 

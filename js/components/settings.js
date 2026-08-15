@@ -4,7 +4,9 @@ import { GoogleSheetsService } from '../services/google-sheets.js';
 import { ExportImportService } from '../services/export-import.js';
 import { SyncModal } from './sync-modal.js';
 import { showToast } from './toast.js';
+import { confirmDialog } from './confirm-dialog.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { CATEGORY_PALETTE } from '../config.js';
 
 export class Settings {
   constructor(containerId = 'view-settings') {
@@ -64,9 +66,6 @@ export class Settings {
                 <span>${isConnected ? 'Google Cloud Đã Kết Nối' : 'Chưa Kết Nối'}</span>
               </div>
             </div>
-            <button type="button" class="btn btn-secondary" id="btn-show-google-guide" style="padding: 4px 10px; font-size: var(--font-size-xs);">
-              📖 Hướng dẫn lấy Client ID
-            </button>
           </div>
 
           <div class="flex flex-col gap-4">
@@ -78,6 +77,21 @@ export class Settings {
               </div>
               <small class="text-muted">Client ID dùng để xác thực an toàn trực tiếp với Google Sheets của bạn.</small>
             </div>
+
+            <details class="card" style="background: var(--bg-subtle); padding: var(--space-3); margin: 0;">
+              <summary style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); font-weight: 600; color: var(--primary-600); list-style: none;">
+                <i data-lucide="book-open" style="width: 16px; height: 16px;"></i>
+                <span>Hướng dẫn lấy Google Client ID</span>
+              </summary>
+              <ol style="margin: var(--space-3) 0 0; padding-left: var(--space-5); font-size: var(--font-size-sm); color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px;">
+                <li>Truy cập console.cloud.google.com và tạo 1 Project mới.</li>
+                <li>Vào mục "APIs & Services" &gt; "Enabled APIs" &gt; Bật "Google Sheets API" và "Google Drive API".</li>
+                <li>Vào "OAuth consent screen" &gt; Chọn "External" &gt; Điền tên ứng dụng "QuanLyChiTieu".</li>
+                <li>Vào "Credentials" &gt; Bấm "Create Credentials" &gt; Chọn "OAuth Client ID" &gt; Loại "Web application".</li>
+                <li>Thêm địa chỉ web của bạn vào "Authorized JavaScript origins" (ví dụ: http://localhost:5500 hoặc https://username.github.io).</li>
+                <li>Copy Client ID dán vào ô cài đặt trên web này và bấm Lưu!</li>
+              </ol>
+            </details>
 
             <div class="flex gap-2" style="flex-wrap: wrap; margin-top: var(--space-2);">
               ${!isConnected ? `
@@ -136,8 +150,9 @@ export class Settings {
           <!-- Categories List -->
           <div class="flex flex-col gap-4">
             <div>
-              <span class="font-semibold text-secondary" style="font-size: var(--font-size-sm); display: block; margin-bottom: var(--space-2);">
-                🔻 Hạng mục Chi Tiêu (${state.categories.filter(c => c.type === 'expense').length})
+              <span class="font-semibold text-secondary flex items-center gap-2" style="font-size: var(--font-size-sm); margin-bottom: var(--space-2);">
+                <i data-lucide="trending-down" style="width: 14px; height: 14px; color: var(--expense-primary);"></i>
+                Hạng mục Chi Tiêu (${state.categories.filter(c => c.type === 'expense').length})
               </span>
               <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                 ${state.categories.filter(c => c.type === 'expense').map(c => `
@@ -153,8 +168,9 @@ export class Settings {
             </div>
 
             <div>
-              <span class="font-semibold text-secondary" style="font-size: var(--font-size-sm); display: block; margin-bottom: var(--space-2);">
-                🔺 Hạng mục Thu Nhập (${state.categories.filter(c => c.type === 'income').length})
+              <span class="font-semibold text-secondary flex items-center gap-2" style="font-size: var(--font-size-sm); margin-bottom: var(--space-2);">
+                <i data-lucide="trending-up" style="width: 14px; height: 14px; color: var(--income-primary);"></i>
+                Hạng mục Thu Nhập (${state.categories.filter(c => c.type === 'income').length})
               </span>
               <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                 ${state.categories.filter(c => c.type === 'income').map(c => `
@@ -173,18 +189,40 @@ export class Settings {
 
         <!-- Mobile App / PWA Install Guide Card -->
         <div class="card" style="border-left: 4px solid var(--primary-500);">
-          <div class="flex items-center justify-between" style="margin-bottom: var(--space-3);">
-            <div class="flex items-center gap-3">
-              <div class="badge badge-subtle"><i data-lucide="smartphone" style="width: 18px; height: 18px;"></i></div>
+          <div class="flex items-center gap-3" style="margin-bottom: var(--space-3);">
+            <div class="badge badge-subtle"><i data-lucide="smartphone" style="width: 18px; height: 18px;"></i></div>
+            <div>
+              <h3 style="font-size: var(--font-size-base); font-weight: 600;">Cài Đặt Ứng Dụng Trên Điện Thoại (PWA)</h3>
+              <small class="text-muted">Thêm app vào Màn hình chính để dùng toàn màn hình, mượt mà như app tải từ App Store</small>
+            </div>
+          </div>
+
+          <details class="card" style="background: var(--bg-subtle); padding: var(--space-3); margin: 0;">
+            <summary style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); font-weight: 600; color: var(--primary-600); list-style: none;">
+              <i data-lucide="smartphone" style="width: 16px; height: 16px;"></i>
+              <span>Xem Hướng Dẫn Cài Đặt</span>
+            </summary>
+            <div style="margin-top: var(--space-3); font-size: var(--font-size-sm); color: var(--text-secondary); display: flex; flex-direction: column; gap: var(--space-3);">
               <div>
-                <h3 style="font-size: var(--font-size-base); font-weight: 600;">Cài Đặt Ứng Dụng Trên Điện Thoại (PWA)</h3>
-                <small class="text-muted">Thêm app vào Màn hình chính để dùng toàn màn hình, mượt mà như app tải từ App Store</small>
+                <strong>🍏 Dành cho iPhone / iPad (Trình duyệt Safari):</strong>
+                <ol style="margin: var(--space-2) 0 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: 4px;">
+                  <li>Mở link web ứng dụng bằng Safari.</li>
+                  <li>Bấm vào nút "Chia sẻ" (Biểu tượng ô vuông có mũi tên trỏ lên ở thanh dưới cùng).</li>
+                  <li>Cuộn xuống và chọn "Thêm vào Màn hình chính" (Add to Home Screen).</li>
+                  <li>Bấm "Thêm" ở góc trên bên phải. Xong! Ứng dụng sẽ xuất hiện như 1 App độc lập không có thanh địa chỉ web.</li>
+                </ol>
+              </div>
+              <div>
+                <strong>🤖 Dành cho Android (Trình duyệt Chrome / Brave):</strong>
+                <ol style="margin: var(--space-2) 0 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: 4px;">
+                  <li>Mở link web bằng Chrome.</li>
+                  <li>Bấm vào dấu 3 chấm (⋮) ở góc trên bên phải.</li>
+                  <li>Chọn "Cài đặt ứng dụng" hoặc "Thêm vào Màn hình chính".</li>
+                  <li>Bấm xác nhận Cài đặt!</li>
+                </ol>
               </div>
             </div>
-            <button type="button" class="btn btn-secondary" id="btn-show-pwa-guide" style="font-size: var(--font-size-xs); padding: 6px 12px;">
-              Xem Hướng Dẫn 📲
-            </button>
-          </div>
+          </details>
         </div>
 
         <!-- Data Management Card (Backup / Restore) -->
@@ -209,12 +247,22 @@ export class Settings {
               <span>Khôi Phục File (.JSON)</span>
               <input type="file" id="input-import-json" accept=".json" style="display: none;">
             </label>
-
-            <button type="button" class="btn btn-danger" id="btn-reset-data">
-              <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
-              <span>Xóa Sạch Dữ Liệu (Reset)</span>
-            </button>
           </div>
+        </div>
+
+        <!-- Danger Zone: Reset Data -->
+        <div class="danger-zone">
+          <div class="flex items-center gap-2" style="margin-bottom: var(--space-2);">
+            <i data-lucide="alert-triangle" style="width: 18px; height: 18px; color: var(--expense-primary);"></i>
+            <h3 style="font-size: var(--font-size-base); font-weight: 600; color: var(--expense-primary);">Khu Vực Nguy Hiểm</h3>
+          </div>
+          <p class="text-muted" style="font-size: var(--font-size-sm); margin-bottom: var(--space-3);">
+            Xóa toàn bộ giao dịch, ví, hạng mục và cài đặt đã lưu trên trình duyệt này. Hành động này không thể hoàn tác — hãy sao lưu dữ liệu trước khi tiếp tục.
+          </p>
+          <button type="button" class="btn btn-danger" id="btn-reset-data">
+            <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+            <span>Xóa Sạch Dữ Liệu (Reset)</span>
+          </button>
         </div>
       </div>
     `;
@@ -236,15 +284,11 @@ export class Settings {
         const type = typeSelect.value;
 
         if (!name) {
-          alert('Vui lòng nhập tên hạng mục');
+          showToast('Vui lòng nhập tên hạng mục', 'error');
           return;
         }
 
-        // Random or default pleasant colors
-        const colors = type === 'income' 
-          ? ['#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#f59e0b']
-          : ['#f97316', '#ec4899', '#ef4444', '#8b5cf6', '#06b6d4', '#eab308', '#64748b'];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const randomColor = CATEGORY_PALETTE[Math.floor(Math.random() * CATEGORY_PALETTE.length)];
 
         stateStore.addCategory({ name, type, color: randomColor });
         nameInput.value = '';
@@ -253,11 +297,12 @@ export class Settings {
 
     // Delete Category
     this.container.querySelectorAll('.btn-delete-cat').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
-        if (confirm('Bạn có chắc chắn muốn xóa hạng mục này?')) {
+        const ok = await confirmDialog('Bạn có chắc chắn muốn xóa hạng mục này?', { danger: true });
+        if (ok) {
           const res = stateStore.deleteCategory(id);
-          if (!res.success) alert(res.reason);
+          if (!res.success) showToast(res.reason, 'error');
         }
       });
     });
@@ -268,23 +313,22 @@ export class Settings {
       saveBtn.addEventListener('click', () => {
         const clientId = this.container.querySelector('#setting-client-id').value.trim();
         stateStore.updateSettings({ googleClientId: clientId });
-        alert('Đã lưu Google Client ID thành công!');
+        showToast('Đã lưu Google Client ID thành công!', 'success');
       });
     }
 
     // Undo Pull
     const undoBtn = this.container.querySelector('#btn-undo-pull');
     if (undoBtn) {
-      undoBtn.addEventListener('click', () => {
-        if (confirm('Bạn có chắc chắn muốn hoàn tác lại dữ liệu trước lần kéo gần nhất từ Google Sheets?')) {
-          try {
-            GoogleSheetsService.restorePrePullBackup();
-            if (window.showToast) showToast('Đã hoàn tác lại dữ liệu thành công!', 'success');
-            else alert('Đã hoàn tác lại dữ liệu thành công!');
-            this.render();
-          } catch (err) {
-            alert('Lỗi hoàn tác: ' + err.message);
-          }
+      undoBtn.addEventListener('click', async () => {
+        const ok = await confirmDialog('Bạn có chắc chắn muốn hoàn tác lại dữ liệu trước lần kéo gần nhất từ Google Sheets?', { danger: true });
+        if (!ok) return;
+        try {
+          GoogleSheetsService.restorePrePullBackup();
+          showToast('Đã hoàn tác lại dữ liệu thành công!', 'success');
+          this.render();
+        } catch (err) {
+          showToast('Lỗi hoàn tác: ' + err.message, 'error');
         }
       });
     }
@@ -304,7 +348,7 @@ export class Settings {
       connectBtn.addEventListener('click', () => {
         const clientId = stateStore.getState().settings.googleClientId;
         if (!clientId) {
-          alert('Vui lòng nhập Google Client ID trước khi kết nối.');
+          showToast('Vui lòng nhập Google Client ID trước khi kết nối.', 'error');
           return;
         }
         googleAuthService.init(clientId, async (token) => {
@@ -319,7 +363,7 @@ export class Settings {
     if (disconnectBtn) {
       disconnectBtn.addEventListener('click', () => {
         googleAuthService.signOut();
-        alert('Đã đăng xuất Google.');
+        showToast('Đã đăng xuất Google.', 'info');
       });
     }
 
@@ -342,10 +386,9 @@ export class Settings {
         }
         try {
           const res = await GoogleSheetsService.push(token);
-          if (window.showToast) showToast(`Đã đẩy ${res.count} giao dịch lên Google Sheets!`, 'success');
-          else alert(`Đã đẩy ${res.count} giao dịch lên Google Sheets!`);
+          showToast(`Đã đẩy ${res.count} giao dịch lên Google Sheets!`, 'success');
         } catch (e) {
-          alert('Lỗi đẩy dữ liệu: ' + e.message);
+          showToast('Lỗi đẩy dữ liệu: ' + e.message, 'error');
         }
       });
     }
@@ -354,9 +397,8 @@ export class Settings {
     const quickPullBtn = this.container.querySelector('#btn-quick-pull');
     if (quickPullBtn) {
       quickPullBtn.addEventListener('click', async () => {
-        if (!confirm('⚠️ CẢNH BÁO: Thao tác này sẽ tải dữ liệu từ Google Sheets về và GHI ĐÈ dữ liệu trên máy. Bạn có chắc chắn không?')) {
-          return;
-        }
+        const ok = await confirmDialog('Thao tác này sẽ tải dữ liệu từ Google Sheets về và GHI ĐÈ dữ liệu trên máy. Bạn có chắc chắn không?', { danger: true });
+        if (!ok) return;
         const token = googleAuthService.getValidToken();
         if (!token) {
           googleAuthService.signIn();
@@ -364,23 +406,11 @@ export class Settings {
         }
         try {
           const res = await GoogleSheetsService.pull(token);
-          if (window.showToast) showToast(`Đã tải về ${res.txCount} giao dịch từ Google Sheets!`, 'success');
-          else alert(`Đã tải về ${res.txCount} giao dịch từ Google Sheets!`);
+          showToast(`Đã tải về ${res.txCount} giao dịch từ Google Sheets!`, 'success');
         } catch (e) {
-          alert('Lỗi kéo dữ liệu: ' + e.message);
+          showToast('Lỗi kéo dữ liệu: ' + e.message, 'error');
         }
       });
-    }
-
-    // Guide Modals
-    const guideBtn = this.container.querySelector('#btn-show-google-guide');
-    if (guideBtn) {
-      guideBtn.addEventListener('click', () => this.showGoogleGuideModal());
-    }
-
-    const pwaGuideBtn = this.container.querySelector('#btn-show-pwa-guide');
-    if (pwaGuideBtn) {
-      pwaGuideBtn.addEventListener('click', () => this.showPwaGuideModal());
     }
 
     // Export JSON / CSV
@@ -394,44 +424,25 @@ export class Settings {
         const file = e.target.files[0];
         if (file) {
           ExportImportService.importJSON(file, (res) => {
-            if (res.success) alert('Khôi phục dữ liệu thành công!');
-            else alert('Lỗi khôi phục: ' + res.error);
+            if (res.success) showToast('Khôi phục dữ liệu thành công!', 'success');
+            else showToast('Lỗi khôi phục: ' + res.error, 'error');
           });
         }
       });
     }
 
     // Reset Data
-    this.container.querySelector('#btn-reset-data')?.addEventListener('click', () => {
-      if (confirm('CẢNH BÁO: Hành động này sẽ xóa toàn bộ giao dịch và cài đặt của bạn tại trình duyệt. Bạn có chắc chắn muốn tiếp tục?')) {
+    this.container.querySelector('#btn-reset-data')?.addEventListener('click', async () => {
+      const ok = await confirmDialog('Thao tác này sẽ xoá vĩnh viễn toàn bộ dữ liệu cục bộ. Gõ "XÓA" để xác nhận.', {
+        title: 'Xoá toàn bộ dữ liệu',
+        danger: true,
+        requireText: 'XÓA',
+        confirmText: 'Xoá vĩnh viễn'
+      });
+      if (ok) {
         localStorage.clear();
         location.reload();
       }
     });
-  }
-
-  showPwaGuideModal() {
-    alert(`📲 CÁCH CÀI ĐẶT APP VÀO MÀN HÌNH CHÍNH (PWA):\n
-🍏 Dành cho iPhone / iPad (Trình duyệt Safari):
-1. Mở link web ứng dụng bằng Safari.
-2. Bấm vào nút "Chia sẻ" (Biểu tượng ô vuông có mũi tên trỏ lên ở thanh dưới cùng).
-3. Cuộn xuống và chọn "Thêm vào Màn hình chính" (Add to Home Screen).
-4. Bấm "Thêm" ở góc trên bên phải. Xong! Ứng dụng sẽ xuất hiện như 1 App độc lập không có thanh địa chỉ web.
-
-🤖 Dành cho Android (Trình duyệt Chrome / Brave):
-1. Mở link web bằng Chrome.
-2. Bấm vào dấu 3 chấm (⋮) ở góc trên bên phải.
-3. Chọn "Cài đặt ứng dụng" hoặc "Thêm vào Màn hình chính".
-4. Bấm xác nhận Cài đặt!`);
-  }
-
-  showGoogleGuideModal() {
-    alert(`CÁCH LẤY GOOGLE CLIENT ID MIỄN PHÍ (2 PHÚT):\n
-1. Truy cập console.cloud.google.com và tạo 1 Project mới.
-2. Vào mục "APIs & Services" > "Enabled APIs" > Bật "Google Sheets API" và "Google Drive API".
-3. Vào "OAuth consent screen" > Chọn "External" > Điền tên ứng dụng "QuanLyChiTieu".
-4. Vào "Credentials" > Bấm "Create Credentials" > Chọn "OAuth Client ID" > Loại "Web application".
-5. Thêm địa chỉ web của bạn vào "Authorized JavaScript origins" (ví dụ: http://localhost:5500 hoặc https://username.github.io).
-6. Copy Client ID dán vào ô cài đặt trên web này và bấm Lưu!`);
   }
 }

@@ -90,6 +90,11 @@ class App {
       }
       this.renderIcons();
     }
+
+    // Charts read CSS variables at creation time, so they go stale on toggle
+    if (this.currentView === 'analytics' && this.analytics) {
+      this.analytics.render();
+    }
   }
 
   setupThemeToggle() {
@@ -145,11 +150,18 @@ class App {
   setupSyncStatusSubscriber() {
     const badge = document.getElementById('sync-status-badge');
     if (badge) {
-      badge.addEventListener('click', () => {
+      const openSync = () => {
         if (window.syncModal) {
           window.syncModal.open();
         } else {
           this.switchView('settings');
+        }
+      };
+      badge.addEventListener('click', openSync);
+      badge.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openSync();
         }
       });
     }
