@@ -11,6 +11,8 @@ import { Analytics } from './components/analytics.js';
 import { Settings } from './components/settings.js';
 import { TransactionModal } from './components/transaction-modal.js';
 import { googleAuthService } from './services/google-auth.js';
+import { firebaseAuthService } from './services/firebase-auth.js';
+import { firebaseSyncService } from './services/firebase-sync.js';
 
 const viewTitles = {
   dashboard: 'Tổng quan',
@@ -172,21 +174,54 @@ class App {
       });
     }
 
-    stateStore.subscribe((event, data, state) => {
+    const updateBadge = () => {
       const badgeEl = document.getElementById('sync-status-badge');
       const textEl = document.getElementById('sync-status-text');
       if (!badgeEl || !textEl) return;
 
-      const isConnected = googleAuthService.getValidToken() !== null;
-      badgeEl.className = `badge ${isConnected ? 'badge-income' : 'badge-subtle'}`;
-      textEl.textContent = state.syncStatus.message || (isConnected ? 'Đã kết nối Google' : 'Chưa kết nối Google');
+      const state = stateStore.getState();
+      const fbUser = firebaseAuthService.getCurrentUser() || state.settings?.firebaseUser;
+      const fbStatus = firebaseSyncService.getStatus();
+      const isSheetsConnected = googleAuthService.getValidToken() !== null;
 
-      const icon = badgeEl.querySelector('i');
-      if (icon) {
-        icon.setAttribute('data-lucide', isConnected ? 'cloud' : 'cloud-off');
-        this.renderIcons();
+      if (fbUser && fbStatus.status === 'connected') {
+        badgeEl.className = 'badge badge-income';
+        textEl.textContent = '⚡ Realtime Sync';
+        badgeEl.title = 'Firebase Realtime Sync: Đang hoạt động tức thì';
+        const icon = badgeEl.querySelector('i');
+        if (icon) icon.setAttribute('data-lucide', 'zap');
+      } else if (fbUser && fbStatus.status === 'syncing') {
+        badgeEl.className = 'badge badge-subtle';
+        textEl.textContent = 'Đang đồng bộ...';
+        badgeEl.title = 'Đang đồng bộ dữ liệu với Firebase Cloud';
+        const icon = badgeEl.querySelector('i');
+        if (icon) icon.setAttribute('data-lucide', 'refresh-cw');
+      } else if (fbStatus.status === 'error') {
+        badgeEl.className = 'badge badge-expense';
+        textEl.textContent = 'Lỗi Realtime';
+        badgeEl.title = fbStatus.message;
+        const icon = badgeEl.querySelector('i');
+        if (icon) icon.setAttribute('data-lucide', 'alert-circle');
+      } else if (isSheetsConnected) {
+        badgeEl.className = 'badge badge-income';
+        textEl.textContent = 'Google Sheets';
+        badgeEl.title = 'Google Sheets: Bấm để mở bảng đồng bộ';
+        const icon = badgeEl.querySelector('i');
+        if (icon) icon.setAttribute('data-lucide', 'table');
+      } else {
+        badgeEl.className = 'badge badge-subtle';
+        textEl.textContent = 'Chưa kết nối Cloud';
+        badgeEl.title = 'Bấm để vào Cài đặt và kích hoạt Realtime Sync';
+        const icon = badgeEl.querySelector('i');
+        if (icon) icon.setAttribute('data-lucide', 'cloud-off');
       }
-    });
+
+      this.renderIcons();
+    };
+
+    stateStore.subscribe(updateBadge);
+    firebaseSyncService.onStatusChange(updateBadge);
+    updateBadge();
   }
 
   renderIcons() {

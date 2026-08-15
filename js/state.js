@@ -1,10 +1,12 @@
 /**
  * Central Reactive State Manager (Pub/Sub Store)
  */
-import { DEFAULT_CATEGORIES, DEFAULT_WALLETS, DEFAULT_SETTINGS, STORAGE_KEYS, CATEGORY_PALETTE } from './config.js';
+import { DEFAULT_CATEGORIES, DEFAULT_WALLETS, DEFAULT_SETTINGS, DEFAULT_FIREBASE_CONFIG, STORAGE_KEYS, CATEGORY_PALETTE } from './config.js';
 import { StorageService } from './services/storage.js';
 import { generateId, getCurrentDateFormatted } from './utils/helpers.js';
 import { getMonthYear } from './utils/formatters.js';
+import { firebaseAuthService } from './services/firebase-auth.js';
+import { firebaseSyncService } from './services/firebase-sync.js';
 
 class StateStore {
   constructor() {
@@ -20,6 +22,52 @@ class StateStore {
     };
     this.ensureUniqueCategoryColors();
     this.recalculateWalletBalances();
+    this.initFirebase();
+  }
+
+  initFirebase() {
+    try {
+      const config = this.state.settings?.firebaseConfig || DEFAULT_FIREBASE_CONFIG;
+      firebaseAuthService.init(config);
+      firebaseAuthService.onAuthChange((user) => {
+        this.state.settings.firebaseUser = user;
+        if (user) {
+          firebaseSyncService.startSync(user.uid, (table, items) => {
+            this.applyRemoteState(table, items);
+          });
+        } else {
+          firebaseSyncService.stopSync();
+        }
+        this.saveToStorage();
+        this.listeners.forEach(fn => fn('auth:changed', user, this.state));
+      });
+    } catch (err) {
+      console.warn('Khởi tạo Firebase thất bại:', err);
+    }
+  }
+
+  applyRemoteState(table, items) {
+    if (!items) return;
+    if (table === 'transactions') {
+      this.state.transactions = items;
+    } else if (table === 'wallets') {
+      this.state.wallets = items;
+    } else if (table === 'categories') {
+      this.state.categories = items;
+    } else if (table === 'budgets') {
+      this.state.budgets = items;
+    } else if (table === 'debts') {
+      this.state.debts = items;
+    } else if (table === 'settings' && typeof items === 'object') {
+      this.state.settings = { ...this.state.settings, ...items };
+    }
+
+    if (['transactions', 'wallets', 'debts'].includes(table)) {
+      this.recalculateWalletBalances();
+    }
+
+    this.saveToStorage();
+    this.listeners.forEach(fn => fn('remote:synced', { table, items }, this.state));
   }
 
   ensureUniqueCategoryColors() {
@@ -60,6 +108,27 @@ class StateStore {
   notify(event, payload) {
     this.saveToStorage();
     this.listeners.forEach(fn => fn(event, payload, this.state));
+
+    // Auto-sync with Firebase if active and not a remote update
+    if (firebaseSyncService.isActive() && !firebaseSyncService.isApplyingRemote) {
+      if (event.startsWith('transaction:')) {
+        firebaseSyncService.scheduleSync('transactions', this.state.transactions);
+      } else if (event.startsWith('wallet:')) {
+        firebaseSyncService.scheduleSync('wallets', this.state.wallets);
+      } else if (event.startsWith('category:')) {
+        firebaseSyncService.scheduleSync('categories', this.state.categories);
+      } else if (event.startsWith('budget:')) {
+        firebaseSyncService.scheduleSync('budgets', this.state.budgets);
+      } else if (event.startsWith('debt:')) {
+        firebaseSyncService.scheduleSync('debts', this.state.debts);
+      } else if (event === 'settings:updated') {
+        firebaseSyncService.scheduleSync('settings', {
+          currency: this.state.settings.currency,
+          currencySymbol: this.state.settings.currencySymbol,
+          theme: this.state.settings.theme
+        });
+      }
+    }
   }
 
   saveToStorage() {

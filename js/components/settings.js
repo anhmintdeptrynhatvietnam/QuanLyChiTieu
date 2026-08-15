@@ -2,11 +2,13 @@ import { stateStore } from '../state.js';
 import { googleAuthService } from '../services/google-auth.js';
 import { GoogleSheetsService } from '../services/google-sheets.js';
 import { ExportImportService } from '../services/export-import.js';
+import { firebaseAuthService } from '../services/firebase-auth.js';
+import { firebaseSyncService } from '../services/firebase-sync.js';
 import { SyncModal } from './sync-modal.js';
 import { showToast } from './toast.js';
 import { confirmDialog } from './confirm-dialog.js';
 import { escapeHtml } from '../utils/helpers.js';
-import { CATEGORY_PALETTE } from '../config.js';
+import { CATEGORY_PALETTE, DEFAULT_FIREBASE_CONFIG } from '../config.js';
 
 export class Settings {
   constructor(containerId = 'view-settings') {
@@ -20,6 +22,7 @@ export class Settings {
     this.render();
     this.bindEvents();
     stateStore.subscribe(() => this.render());
+    firebaseSyncService.onStatusChange(() => this.render());
   }
 
   render() {
@@ -29,6 +32,11 @@ export class Settings {
     const hasBackup = GoogleSheetsService.hasPrePullBackup();
     const backupInfo = hasBackup ? GoogleSheetsService.getPrePullBackupInfo() : null;
     const currentTheme = document.documentElement.getAttribute('data-theme') || (typeof window.getAppTheme === 'function' ? window.getAppTheme() : localStorage.getItem('theme')) || 'light';
+
+    const fbUser = firebaseAuthService.getCurrentUser() || state.settings?.firebaseUser;
+    const fbStatus = firebaseSyncService.getStatus();
+    const isFbConnected = !!fbUser && (fbStatus.status === 'connected' || fbStatus.status === 'syncing');
+    const fbConfig = state.settings?.firebaseConfig || DEFAULT_FIREBASE_CONFIG;
 
     this.container.innerHTML = `
       <div class="flex flex-col gap-6">
@@ -58,13 +66,115 @@ export class Settings {
           </div>
         ` : ''}
 
-        <!-- Google Sheets Cloud Sync Card -->
+        <!-- Firebase Cloud Realtime Sync Card (Primary) -->
+        <div class="card" style="border: 2px solid ${isFbConnected ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-subtle)'}; background: var(--bg-surface-elevated);">
+          <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-3);">
+            <div class="flex items-center gap-2">
+              <div class="badge ${isFbConnected ? 'badge-income' : 'badge-subtle'}" style="padding: 6px 12px; font-size: 13px;">
+                <i data-lucide="${isFbConnected ? 'zap' : 'cloud-off'}" style="width: 15px; height: 15px; ${isFbConnected ? 'color: #10b981;' : ''}"></i>
+                <span style="font-weight: 700;">${isFbConnected ? '⚡ Realtime Sync Đang Bật' : 'Chưa Bật Realtime Sync'}</span>
+              </div>
+            </div>
+            ${fbStatus.lastSync ? `
+              <span class="text-muted" style="font-size: 11px;">
+                Đồng bộ: ${new Date(fbStatus.lastSync).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            ` : ''}
+          </div>
+
+          <div class="flex flex-col gap-4">
+            <p class="text-secondary" style="font-size: var(--font-size-sm); margin: 0; line-height: 1.5;">
+              Đồng bộ dữ liệu tức thì giữa máy tính và điện thoại <strong>(<100ms)</strong>. Tự động lưu offline khi mất mạng và tự đồng bộ khi có kết nối trở lại.
+            </p>
+
+            ${fbUser ? `
+              <!-- User Profile Card -->
+              <div class="card" style="background: var(--bg-subtle); padding: var(--space-3); border-radius: var(--radius-md);">
+                <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 12px;">
+                  <div class="flex items-center gap-3">
+                    ${fbUser.photoURL ? `
+                      <img src="${escapeHtml(fbUser.photoURL)}" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-500);">
+                    ` : `
+                      <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-600); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                        ${escapeHtml((fbUser.displayName || 'U')[0].toUpperCase())}
+                      </div>
+                    `}
+                    <div>
+                      <div style="font-weight: 600; font-size: var(--font-size-sm); color: var(--text-primary);">
+                        ${escapeHtml(fbUser.displayName || 'Người dùng')} ${fbUser.isAnonymous ? '<span class="badge badge-subtle" style="font-size: 10px;">Ẩn danh</span>' : ''}
+                      </div>
+                      <div class="text-muted" style="font-size: 11px;">${escapeHtml(fbUser.email || 'UID: ' + fbUser.uid.substring(0, 8) + '...')}</div>
+                    </div>
+                  </div>
+                  <div class="flex gap-2">
+                    <button type="button" class="btn btn-secondary" id="btn-firebase-push-all" title="Đẩy toàn bộ dữ liệu máy này lên Cloud" style="font-size: var(--font-size-xs); padding: 6px 12px;">
+                      <i data-lucide="cloud-upload" style="width: 14px; height: 14px; color: var(--primary-600);"></i>
+                      <span>Đẩy Lên Cloud</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-firebase-pull-all" title="Tải toàn bộ dữ liệu Cloud về máy" style="font-size: var(--font-size-xs); padding: 6px 12px;">
+                      <i data-lucide="cloud-download" style="width: 14px; height: 14px; color: #10b981;"></i>
+                      <span>Kéo Về Máy</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-firebase-signout" style="font-size: var(--font-size-xs); padding: 6px 12px;">
+                      <i data-lucide="log-out" style="width: 14px; height: 14px;"></i>
+                      <span>Đăng Xuất</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <!-- Sign In Action Buttons -->
+              <div class="flex gap-3" style="flex-wrap: wrap;">
+                <button type="button" class="btn btn-primary" id="btn-firebase-login-google" style="padding: 10px 18px; font-weight: 600;">
+                  <i data-lucide="log-in" style="width: 18px; height: 18px;"></i>
+                  <span>Đăng Nhập Google (Bật Realtime)</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="btn-firebase-login-guest" style="padding: 10px 14px;">
+                  <i data-lucide="user-check" style="width: 16px; height: 16px;"></i>
+                  <span>Dùng Thử Ẩn Danh (Guest)</span>
+                </button>
+              </div>
+            `}
+
+            <!-- Collapsible Firebase Config Setup -->
+            <details class="card" style="background: var(--bg-subtle); padding: var(--space-3); margin: 0;">
+              <summary style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); font-weight: 600; color: var(--primary-600); list-style: none;">
+                <i data-lucide="settings-2" style="width: 16px; height: 16px;"></i>
+                <span>Cấu Hình Firebase Riêng Của Bạn (Tùy chọn)</span>
+              </summary>
+              <div style="margin-top: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3);">
+                <p class="text-muted" style="font-size: 11px; margin: 0;">
+                  Mặc định ứng dụng đã có sẵn cấu hình Firebase. Nếu muốn dùng Firebase riêng của bạn, hãy dán JSON hoặc thông số vào đây:
+                </p>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 11px;">Firebase Project ID</label>
+                  <input type="text" id="setting-fb-projectid" class="form-input" value="${escapeHtml(fbConfig.projectId || '')}" placeholder="sothuchi-xxxxx">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 11px;">Firebase API Key</label>
+                  <input type="text" id="setting-fb-apikey" class="form-input" value="${escapeHtml(fbConfig.apiKey || '')}" placeholder="AIzaSy...">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 11px;">Firebase Auth Domain</label>
+                  <input type="text" id="setting-fb-authdomain" class="form-input" value="${escapeHtml(fbConfig.authDomain || '')}" placeholder="sothuchi-xxxxx.firebaseapp.com">
+                </div>
+                <div class="flex justify-end">
+                  <button type="button" class="btn btn-primary" id="btn-save-fb-config" style="padding: 6px 12px; font-size: var(--font-size-xs);">
+                    <span>Lưu Cấu Hình Firebase</span>
+                  </button>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- Google Sheets Cloud Sync Card (Secondary Backup) -->
         <div class="card">
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-3);">
             <div class="flex items-center gap-2">
               <div class="badge ${isConnected ? 'badge-income' : 'badge-subtle'}">
-                <i data-lucide="${isConnected ? 'cloud' : 'cloud-off'}" style="width: 14px; height: 14px;"></i>
-                <span>${isConnected ? 'Google Cloud Đã Kết Nối' : 'Chưa Kết Nối'}</span>
+                <i data-lucide="${isConnected ? 'table' : 'table-properties'}" style="width: 14px; height: 14px;"></i>
+                <span>${isConnected ? 'Google Sheets Đã Kết Nối' : 'Google Sheets (Sao Lưu Thủ Công)'}</span>
               </div>
             </div>
           </div>
@@ -76,7 +186,7 @@ export class Settings {
                 <input type="text" id="setting-client-id" class="form-input" placeholder="xxxx.apps.googleusercontent.com" value="${escapeHtml(state.settings.googleClientId || '')}">
                 <button type="button" class="btn btn-primary" id="btn-save-client-id">Lưu</button>
               </div>
-              <small class="text-muted">Client ID dùng để xác thực an toàn trực tiếp với Google Sheets của bạn.</small>
+              <small class="text-muted">Dành cho việc xuất dữ liệu trực tiếp thành bảng tính Google Sheets.</small>
             </div>
 
             <details class="card" style="background: var(--bg-subtle); padding: var(--space-3); margin: 0;">
@@ -294,6 +404,133 @@ export class Settings {
   bindEvents() {}
 
   bindCardEvents() {
+    // Firebase: Sign in with Google
+    const fbGoogleBtn = this.container.querySelector('#btn-firebase-login-google');
+    if (fbGoogleBtn) {
+      fbGoogleBtn.addEventListener('click', async () => {
+        try {
+          showToast('Đang mở cửa sổ đăng nhập Google...', 'info');
+          const user = await firebaseAuthService.signInWithGoogle();
+          showToast(`Chào mừng ${user.displayName || 'bạn'}! Đã bật Realtime Sync ⚡`, 'success');
+          
+          // Kiểm tra nếu cloud chưa có dữ liệu và máy có dữ liệu -> hỏi upload
+          const state = stateStore.getState();
+          if (state.transactions && state.transactions.length > 0) {
+            const hasCloud = await firebaseSyncService.checkHasCloudData();
+            if (!hasCloud) {
+              const doUpload = await confirmDialog(
+                `Hệ thống phát hiện thiết bị của bạn đang có ${state.transactions.length} giao dịch. Bạn có muốn đồng bộ toàn bộ dữ liệu này lên Cloud không?`,
+                {
+                  title: 'Đồng bộ dữ liệu ban đầu',
+                  confirmText: 'Tải lên Cloud ngay',
+                  cancelText: 'Để sau'
+                }
+              );
+              if (doUpload) {
+                await firebaseSyncService.pushAllData(state);
+                showToast('Đã tải toàn bộ dữ liệu lên Firebase Cloud thành công!', 'success');
+              }
+            }
+          }
+        } catch (err) {
+          showToast('Lỗi đăng nhập: ' + err.message, 'error');
+        }
+      });
+    }
+
+    // Firebase: Sign in as Guest
+    const fbGuestBtn = this.container.querySelector('#btn-firebase-login-guest');
+    if (fbGuestBtn) {
+      fbGuestBtn.addEventListener('click', async () => {
+        try {
+          await firebaseAuthService.signInAsGuest();
+          showToast('Đã đăng nhập Ẩn danh! Dữ liệu của bạn được lưu tạm thời.', 'success');
+        } catch (err) {
+          showToast('Lỗi đăng nhập ẩn danh: ' + err.message, 'error');
+        }
+      });
+    }
+
+    // Firebase: Sign Out
+    const fbSignoutBtn = this.container.querySelector('#btn-firebase-signout');
+    if (fbSignoutBtn) {
+      fbSignoutBtn.addEventListener('click', async () => {
+        const ok = await confirmDialog('Bạn có chắc chắn muốn ngắt kết nối Realtime Sync trên thiết bị này? Dữ liệu cục bộ vẫn sẽ được giữ lại.');
+        if (ok) {
+          await firebaseAuthService.signOut();
+          showToast('Đã ngắt kết nối Realtime Sync.', 'info');
+        }
+      });
+    }
+
+    // Firebase: Push All Data
+    const fbPushAllBtn = this.container.querySelector('#btn-firebase-push-all');
+    if (fbPushAllBtn) {
+      fbPushAllBtn.addEventListener('click', async () => {
+        const ok = await confirmDialog('Thao tác này sẽ tải toàn bộ dữ liệu từ thiết bị này lên Cloud và GHI ĐÈ dữ liệu trên Cloud. Bạn có chắc chắn không?', {
+          title: 'Đẩy toàn bộ lên Cloud',
+          confirmText: 'Đẩy lên ngay'
+        });
+        if (!ok) return;
+        try {
+          await firebaseSyncService.pushAllData(stateStore.getState());
+          showToast('Đã tải toàn bộ dữ liệu lên Cloud thành công!', 'success');
+        } catch (err) {
+          showToast('Lỗi đẩy dữ liệu: ' + err.message, 'error');
+        }
+      });
+    }
+
+    // Firebase: Pull All Data
+    const fbPullAllBtn = this.container.querySelector('#btn-firebase-pull-all');
+    if (fbPullAllBtn) {
+      fbPullAllBtn.addEventListener('click', async () => {
+        const ok = await confirmDialog('Thao tác này sẽ tải dữ liệu từ Cloud về và GHI ĐÈ toàn bộ dữ liệu trên máy này. Bạn có chắc chắn không?', {
+          title: 'Kéo dữ liệu từ Cloud',
+          confirmText: 'Kéo về máy',
+          danger: true
+        });
+        if (!ok) return;
+        try {
+          const cloudData = await firebaseSyncService.pullAllData();
+          if (cloudData.transactions) {
+            stateStore.importAllData(cloudData);
+            showToast(`Đã tải về ${cloudData.transactions.length} giao dịch từ Cloud thành công!`, 'success');
+          } else {
+            showToast('Chưa có dữ liệu nào trên Cloud.', 'info');
+          }
+        } catch (err) {
+          showToast('Lỗi kéo dữ liệu: ' + err.message, 'error');
+        }
+      });
+    }
+
+    // Firebase: Save Config
+    const saveFbConfigBtn = this.container.querySelector('#btn-save-fb-config');
+    if (saveFbConfigBtn) {
+      saveFbConfigBtn.addEventListener('click', () => {
+        const projectId = this.container.querySelector('#setting-fb-projectid')?.value.trim();
+        const apiKey = this.container.querySelector('#setting-fb-apikey')?.value.trim();
+        const authDomain = this.container.querySelector('#setting-fb-authdomain')?.value.trim();
+
+        if (!projectId || !apiKey) {
+          showToast('Vui lòng nhập đầy đủ Project ID và API Key.', 'error');
+          return;
+        }
+
+        const newConfig = {
+          ...DEFAULT_FIREBASE_CONFIG,
+          projectId,
+          apiKey,
+          authDomain: authDomain || `${projectId}.firebaseapp.com`,
+          storageBucket: `${projectId}.firebasestorage.app`
+        };
+
+        stateStore.updateSettings({ firebaseConfig: newConfig });
+        showToast('Đã lưu cấu hình Firebase mới! Vui lòng làm mới trang để kích hoạt.', 'success');
+      });
+    }
+
     // Theme Switch Buttons
     this.container.querySelectorAll('.btn-set-theme').forEach(btn => {
       btn.addEventListener('click', (e) => {

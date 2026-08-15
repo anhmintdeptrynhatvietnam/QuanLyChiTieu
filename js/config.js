@@ -61,6 +61,16 @@ export const DEFAULT_WALLETS = [
   }
 ];
 
+export const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAsGNbZ8U_YTiLcUWJtVD-uqu5zTdjhDBg",
+  authDomain: "sothuchi-5f58e.firebaseapp.com",
+  databaseURL: "https://sothuchi-5f58e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "sothuchi-5f58e",
+  storageBucket: "sothuchi-5f58e.firebasestorage.app",
+  messagingSenderId: "375858739110",
+  appId: "1:375858739110:web:c995da1d3802dc491d8167"
+};
+
 export const DEFAULT_SETTINGS = {
   currency: 'VND',
   currencySymbol: '₫',
@@ -69,7 +79,10 @@ export const DEFAULT_SETTINGS = {
   spreadsheetId: '',
   spreadsheetName: 'QuanLyChiTieu_DB',
   autoSync: true,
-  lastSyncTime: null
+  lastSyncTime: null,
+  syncProvider: 'firebase',
+  firebaseConfig: DEFAULT_FIREBASE_CONFIG,
+  firebaseUser: null
 };
 
 export const STORAGE_KEYS = {

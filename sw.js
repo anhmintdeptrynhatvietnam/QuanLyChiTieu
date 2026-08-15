@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v1.5';
+const CACHE_NAME = 'qlct-pwa-v2.0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -30,6 +30,8 @@ const ASSETS_TO_CACHE = [
   './js/services/export-import.js',
   './js/services/google-auth.js',
   './js/services/google-sheets.js',
+  './js/services/firebase-auth.js',
+  './js/services/firebase-sync.js',
   './js/utils/formatters.js',
   './js/utils/helpers.js',
   './js/utils/modal-a11y.js',
