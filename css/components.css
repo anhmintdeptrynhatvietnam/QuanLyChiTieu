@@ -177,6 +177,7 @@
 
 /* Floating Action Button (FAB) */
 .fab-btn {
+  display: none;
   position: fixed;
   bottom: calc(var(--mobile-nav-height) + 16px);
   right: 20px;
@@ -188,7 +189,6 @@
   border: none;
   box-shadow: var(--shadow-lg);
   cursor: pointer;
-  display: flex;
   align-items: center;
   justify-content: center;
   z-index: 40;

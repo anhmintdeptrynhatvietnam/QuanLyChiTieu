@@ -511,3 +511,4 @@
 {"ts":"2026-08-15T04:15:46.423Z","hook":"plan-format-kanban","event":"PostToolUse","tool":"Edit","target":"","note":"non-plan-file","dur":0,"status":"skip","exit":0,"error":""}
 {"ts":"2026-08-15T04:15:46.521Z","hook":"dev-rules-reminder","event":"UserPromptSubmit","tool":"","target":"","note":"recently-injected","dur":98,"status":"skip","exit":0,"error":""}
 {"ts":"2026-08-15T04:16:10.112Z","hook":"usage-quota-cache-refresh","event":"Stop","tool":"","target":"","note":"throttled","dur":1,"status":"skip","exit":0,"error":""}
+{"ts":"2026-08-15T07:09:07.788Z","hook":"session-init","event":"SessionStart","tool":"","target":"","note":"startup","dur":405,"status":"ok","exit":0,"error":""}
