@@ -96,6 +96,42 @@
   flex-shrink: 0;
 }
 
+/* Eye toggle button for privacy masking */
+.btn-eye-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.btn-eye-toggle:hover {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.btn-eye-toggle:active {
+  transform: scale(0.92);
+}
+
+.masked-amount {
+  letter-spacing: 2px;
+  font-family: inherit;
+  user-select: none;
+  display: inline-block;
+  opacity: 0.85;
+}
+
 /* Form Controls */
 .form-group {
   margin-bottom: var(--space-4);

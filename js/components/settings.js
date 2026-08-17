@@ -66,13 +66,13 @@ export class Settings {
           </div>
         ` : ''}
 
-        <!-- Firebase Cloud Realtime Sync Card (Primary) -->
+        <!-- Firebase Cloud Sync Card (Primary) -->
         <div class="card" style="border: 2px solid ${isFbConnected ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-subtle)'}; background: var(--bg-surface-elevated);">
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-3);">
             <div class="flex items-center gap-2">
               <div class="badge ${isFbConnected ? 'badge-income' : 'badge-subtle'}" style="padding: 6px 12px; font-size: 13px;">
                 <i data-lucide="${isFbConnected ? 'zap' : 'cloud-off'}" style="width: 15px; height: 15px; ${isFbConnected ? 'color: #10b981;' : ''}"></i>
-                <span style="font-weight: 700;">${isFbConnected ? '⚡ Realtime Sync Đang Bật' : 'Chưa Bật Realtime Sync'}</span>
+                <span style="font-weight: 700;">${isFbConnected ? '⚡ Đã kết nối Cloud' : 'Chưa kết nối Cloud'}</span>
               </div>
             </div>
             ${fbStatus.lastSync ? `
@@ -119,7 +119,7 @@ export class Settings {
               <div class="flex gap-3" style="flex-wrap: wrap;">
                 <button type="button" class="btn btn-primary" id="btn-firebase-login-google" style="padding: 10px 18px; font-weight: 600;">
                   <i data-lucide="log-in" style="width: 18px; height: 18px;"></i>
-                  <span>Đăng Nhập Google (Bật Realtime)</span>
+                  <span>Đăng Nhập Google</span>
                 </button>
                 <button type="button" class="btn btn-secondary" id="btn-firebase-login-guest" style="padding: 10px 14px;">
                   <i data-lucide="user-check" style="width: 16px; height: 16px;"></i>
@@ -405,7 +405,7 @@ export class Settings {
         try {
           showToast('Đang mở cửa sổ đăng nhập Google...', 'info');
           const user = await firebaseAuthService.signInWithGoogle();
-          showToast(`Chào mừng ${user.displayName || 'bạn'}! Đã bật Realtime Sync ⚡`, 'success');
+          showToast(`Chào mừng ${user.displayName || 'bạn'}! Đã kết nối Cloud thành công ⚡`, 'success');
           
           // Kiểm tra nếu cloud chưa có dữ liệu và máy có dữ liệu -> hỏi upload
           const state = stateStore.getState();
@@ -449,10 +449,10 @@ export class Settings {
     const fbSignoutBtn = this.container.querySelector('#btn-firebase-signout');
     if (fbSignoutBtn) {
       fbSignoutBtn.addEventListener('click', async () => {
-        const ok = await confirmDialog('Bạn có chắc chắn muốn ngắt kết nối Realtime Sync trên thiết bị này? Dữ liệu cục bộ vẫn sẽ được giữ lại.');
+        const ok = await confirmDialog('Bạn có chắc chắn muốn ngắt kết nối Cloud trên thiết bị này? Dữ liệu cục bộ vẫn sẽ được giữ lại.');
         if (ok) {
           await firebaseAuthService.signOut();
-          showToast('Đã ngắt kết nối Realtime Sync.', 'info');
+          showToast('Đã ngắt kết nối Cloud.', 'info');
         }
       });
     }

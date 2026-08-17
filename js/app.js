@@ -186,8 +186,8 @@ class App {
 
       if (fbUser && fbStatus.status === 'connected') {
         badgeEl.className = 'badge badge-income';
-        textEl.textContent = '⚡ Realtime Sync';
-        badgeEl.title = 'Firebase Realtime Sync: Đang hoạt động tức thì';
+        textEl.textContent = '⚡ Đã kết nối Cloud';
+        badgeEl.title = 'Firebase Cloud: Đang kết nối và đồng bộ tức thì';
         const icon = badgeEl.querySelector('i');
         if (icon) icon.setAttribute('data-lucide', 'zap');
       } else if (fbUser && fbStatus.status === 'syncing') {
@@ -198,7 +198,7 @@ class App {
         if (icon) icon.setAttribute('data-lucide', 'refresh-cw');
       } else if (fbStatus.status === 'error') {
         badgeEl.className = 'badge badge-expense';
-        textEl.textContent = 'Lỗi Realtime';
+        textEl.textContent = 'Lỗi kết nối';
         badgeEl.title = fbStatus.message;
         const icon = badgeEl.querySelector('i');
         if (icon) icon.setAttribute('data-lucide', 'alert-circle');
@@ -211,7 +211,7 @@ class App {
       } else {
         badgeEl.className = 'badge badge-subtle';
         textEl.textContent = 'Chưa kết nối Cloud';
-        badgeEl.title = 'Bấm để vào Cài đặt và kích hoạt Realtime Sync';
+        badgeEl.title = 'Bấm để vào Cài đặt và kết nối Cloud';
         const icon = badgeEl.querySelector('i');
         if (icon) icon.setAttribute('data-lucide', 'cloud-off');
       }

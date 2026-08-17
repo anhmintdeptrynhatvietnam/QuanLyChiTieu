@@ -5,6 +5,7 @@ import { stateStore } from '../state.js';
 import { formatCurrency, formatNumber, parseFormattedNumber } from '../utils/formatters.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { attachModalA11y } from '../utils/modal-a11y.js';
+import { isAmountVisible, renderEyeButton, attachPrivacyListeners } from '../utils/privacy.js';
 import { confirmDialog } from './confirm-dialog.js';
 import { showToast } from './toast.js';
 
@@ -78,6 +79,7 @@ export class Wallets {
     const state = stateStore.getState();
     const assetWallets = state.wallets.filter(w => w.type !== 'credit');
     const totalBalance = assetWallets.reduce((acc, w) => acc + (Number(w.currentBalance) || 0), 0);
+    const isTotalVisible = isAmountVisible('wallets_total_balance');
 
     this.container.innerHTML = `
       <div class="flex flex-col gap-6">
@@ -88,8 +90,11 @@ export class Wallets {
               <h2 style="font-size: 1.25rem;">Tổng Tài Sản Thực Có</h2>
               <span class="badge badge-subtle" style="font-size: 11px;">Không tính thẻ tín dụng</span>
             </div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: var(--primary-600); margin-top: 4px;">
-              ${formatCurrency(totalBalance)}
+            <div class="flex items-center gap-2" style="margin-top: 4px;">
+              <div style="font-size: 1.75rem; font-weight: 700; color: var(--primary-600);">
+                ${isTotalVisible ? formatCurrency(totalBalance) : '<span class="masked-amount font-bold">••••••••</span>'}
+              </div>
+              ${renderEyeButton('wallets_total_balance')}
             </div>
             <small class="text-muted">Tổng số dư từ ${assetWallets.length} ví tài sản (Tiền mặt, Ngân hàng, Tiết kiệm)</small>
           </div>
@@ -118,6 +123,8 @@ export class Wallets {
       credit: 'Thẻ tín dụng',
       saving: 'Tiết kiệm'
     }[wallet.type] || 'Ví';
+
+    const isWalletVisible = isAmountVisible(`wallet_${wallet.id}`);
 
     let balanceDisplay = '';
     if (isCredit) {
@@ -150,9 +157,12 @@ export class Wallets {
         </div>
 
         <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: var(--space-2);">${escapeHtml(wallet.name)}</h3>
-        ${balanceDisplay}
+        <div class="flex items-center gap-2">
+          ${isWalletVisible ? balanceDisplay : `<div class="font-bold text-primary" style="font-size: 1.5rem;"><span class="masked-amount">••••••••</span></div>`}
+          ${renderEyeButton(`wallet_${wallet.id}`)}
+        </div>
         <small class="text-muted" style="display: block; margin-top: 4px;">
-          ${isCredit ? `Hạn mức / Dư nợ đầu: ${formatCurrency(wallet.initialBalance)}` : `Số dư ban đầu: ${formatCurrency(wallet.initialBalance)}`}
+          ${isCredit ? `Hạn mức / Dư nợ đầu: ${isWalletVisible ? formatCurrency(wallet.initialBalance) : '••••••••'}` : `Số dư ban đầu: ${isWalletVisible ? formatCurrency(wallet.initialBalance) : '••••••••'}`}
         </small>
       </div>
     `;
@@ -228,6 +238,9 @@ export class Wallets {
         }
       });
     });
+
+    // Attach privacy toggle listeners for eye buttons
+    attachPrivacyListeners(this.container, () => this.render());
   }
 
   openModal(walletId = null) {

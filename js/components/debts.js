@@ -5,6 +5,7 @@ import { stateStore } from '../state.js';
 import { formatCurrency, formatNumber, parseFormattedNumber, formatDate } from '../utils/formatters.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { attachModalA11y } from '../utils/modal-a11y.js';
+import { isAmountVisible, renderEyeButton, attachPrivacyListeners } from '../utils/privacy.js';
 import { confirmDialog } from './confirm-dialog.js';
 import { showToast } from './toast.js';
 
@@ -151,6 +152,9 @@ export class Debts {
     else if (this.activeFilter === 'unpaid') filteredDebts = filteredDebts.filter(d => d.status !== 'paid');
     else if (this.activeFilter === 'paid') filteredDebts = filteredDebts.filter(d => d.status === 'paid');
 
+    const isLendVisible = isAmountVisible('debts_total_lend');
+    const isBorrowVisible = isAmountVisible('debts_total_borrow');
+
     this.container.innerHTML = `
       <div class="flex flex-col gap-6">
         <!-- Top Summary Cards -->
@@ -161,7 +165,12 @@ export class Debts {
               <span class="text-secondary font-medium" style="font-size: var(--font-size-sm);">Họ Đang Nợ Tôi (Cần Thu)</span>
               <div class="badge badge-income"><i data-lucide="hand-coins" style="width: 14px; height: 14px;"></i></div>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--income-primary);">${formatCurrency(totalLend)}</h2>
+            <div class="flex items-center gap-2" style="margin-bottom: var(--space-1);">
+              <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--income-primary); margin: 0;">
+                ${isLendVisible ? formatCurrency(totalLend) : '<span class="masked-amount font-bold">••••••••</span>'}
+              </h2>
+              ${renderEyeButton('debts_total_lend')}
+            </div>
             <small class="text-muted">Tiền đã cho vay hoặc mua hộ chưa thu về</small>
           </div>
 
@@ -171,7 +180,12 @@ export class Debts {
               <span class="text-secondary font-medium" style="font-size: var(--font-size-sm);">Tôi Đang Nợ Họ (Cần Trả)</span>
               <div class="badge badge-expense"><i data-lucide="landmark" style="width: 14px; height: 14px;"></i></div>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--expense-primary);">${formatCurrency(totalBorrow)}</h2>
+            <div class="flex items-center gap-2" style="margin-bottom: var(--space-1);">
+              <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--expense-primary); margin: 0;">
+                ${isBorrowVisible ? formatCurrency(totalBorrow) : '<span class="masked-amount font-bold">••••••••</span>'}
+              </h2>
+              ${renderEyeButton('debts_total_borrow')}
+            </div>
             <small class="text-muted">Tiền đang đi vay mượn cần hoàn trả</small>
           </div>
         </div>
@@ -263,10 +277,13 @@ export class Debts {
           
           <div style="margin: var(--space-3) 0;">
             <span class="text-secondary font-medium" style="font-size: var(--font-size-xs); display: block;">Còn lại cần ${isLend ? 'thu' : 'trả'}:</span>
-            <div class="font-bold ${isPaid ? 'text-muted' : (isLend ? 'text-income' : 'text-expense')}" style="font-size: 1.5rem;">
-              ${formatCurrency(debt.remainingAmount)}
+            <div class="flex items-center gap-2">
+              <div class="font-bold ${isPaid ? 'text-muted' : (isLend ? 'text-income' : 'text-expense')}" style="font-size: 1.5rem;">
+                ${isAmountVisible(`debt_${debt.id}`) ? formatCurrency(debt.remainingAmount) : '<span class="masked-amount font-bold">••••••••</span>'}
+              </div>
+              ${renderEyeButton(`debt_${debt.id}`)}
             </div>
-            <small class="text-muted" style="font-size: 11px;">Gốc ban đầu: ${formatCurrency(debt.amount)} (Ví: ${escapeHtml(wallet?.name || 'Mặc định')})</small>
+            <small class="text-muted" style="font-size: 11px;">Gốc ban đầu: ${isAmountVisible(`debt_${debt.id}`) ? formatCurrency(debt.amount) : '••••••••'} (Ví: ${escapeHtml(wallet?.name || 'Mặc định')})</small>
           </div>
 
           <!-- Progress Bar -->
@@ -407,6 +424,9 @@ export class Debts {
         this.openRepaymentModal(id);
       });
     });
+
+    // Attach privacy toggle listeners for eye buttons
+    attachPrivacyListeners(this.container, () => this.render());
   }
 
   populateWalletSelect(selectId, selectedWalletId = null) {

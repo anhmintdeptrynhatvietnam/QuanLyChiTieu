@@ -4,6 +4,7 @@
 import { stateStore } from '../state.js';
 import { formatCurrency, formatRelativeDate, getMonthYear } from '../utils/formatters.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { isAmountVisible, renderEyeButton, attachPrivacyListeners } from '../utils/privacy.js';
 
 export class Dashboard {
   constructor(containerId = 'view-dashboard') {
@@ -48,6 +49,13 @@ export class Dashboard {
     const totalBorrow = (state.debts || []).filter(d => d.type === 'borrow' && d.status !== 'paid')
       .reduce((acc, d) => acc + (Number(d.remainingAmount) || 0), 0);
 
+    // Privacy visibility per section
+    const isBalanceVisible = isAmountVisible('dashboard_balance');
+    const isIncomeVisible = isAmountVisible('dashboard_income');
+    const isExpenseVisible = isAmountVisible('dashboard_expense');
+    const isSavingsVisible = isAmountVisible('dashboard_savings');
+    const isDebtsVisible = isAmountVisible('dashboard_debts');
+
     this.container.innerHTML = `
       <div class="flex flex-col gap-6">
         <!-- Stat Cards Grid -->
@@ -58,7 +66,12 @@ export class Dashboard {
               <span class="text-secondary font-medium" style="font-size: var(--font-size-sm);">Tổng Tài Sản Thực Có</span>
               <div class="badge badge-subtle"><i data-lucide="wallet" style="width: 14px; height: 14px;"></i></div>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">${formatCurrency(totalBalance)}</h2>
+            <div class="flex items-center gap-2" style="margin-bottom: var(--space-1);">
+              <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0;">
+                ${isBalanceVisible ? formatCurrency(totalBalance) : '<span class="masked-amount font-bold">••••••••</span>'}
+              </h2>
+              ${renderEyeButton('dashboard_balance')}
+            </div>
             <small class="text-muted">Từ ${assetWallets.length} ví tài sản (không tính thẻ TD)</small>
           </div>
 
@@ -68,7 +81,12 @@ export class Dashboard {
               <span class="text-secondary font-medium" style="font-size: var(--font-size-sm);">Thu Nhập Tháng Này</span>
               <div class="badge badge-income"><i data-lucide="trending-up" style="width: 14px; height: 14px;"></i></div>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--income-primary);">+${formatCurrency(monthIncome)}</h2>
+            <div class="flex items-center gap-2" style="margin-bottom: var(--space-1);">
+              <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--income-primary); margin: 0;">
+                ${isIncomeVisible ? `+${formatCurrency(monthIncome)}` : '<span class="masked-amount font-bold">••••••••</span>'}
+              </h2>
+              ${renderEyeButton('dashboard_income')}
+            </div>
             <small class="text-muted">Dòng tiền thu về</small>
           </div>
 
@@ -78,7 +96,12 @@ export class Dashboard {
               <span class="text-secondary font-medium" style="font-size: var(--font-size-sm);">Chi Tiêu Tháng Này</span>
               <div class="badge badge-expense"><i data-lucide="trending-down" style="width: 14px; height: 14px;"></i></div>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--expense-primary);">${formatCurrency(monthExpense)}</h2>
+            <div class="flex items-center gap-2" style="margin-bottom: var(--space-1);">
+              <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--expense-primary); margin: 0;">
+                ${isExpenseVisible ? formatCurrency(monthExpense) : '<span class="masked-amount font-bold">••••••••</span>'}
+              </h2>
+              ${renderEyeButton('dashboard_expense')}
+            </div>
             <small class="text-muted">Các khoản đã chi</small>
           </div>
 
@@ -90,9 +113,12 @@ export class Dashboard {
                 <i data-lucide="piggy-bank" style="width: 14px; height: 14px;"></i>
               </div>
             </div>
-            <h2 style="font-size: 1.5rem; font-weight: 700; color: ${netSavings >= 0 ? 'var(--text-primary)' : 'var(--expense-primary)'};">
-              ${formatCurrency(netSavings)}
-            </h2>
+            <div class="flex items-center gap-2" style="margin-bottom: var(--space-1);">
+              <h2 style="font-size: 1.5rem; font-weight: 700; color: ${netSavings >= 0 ? 'var(--text-primary)' : 'var(--expense-primary)'}; margin: 0;">
+                ${isSavingsVisible ? formatCurrency(netSavings) : '<span class="masked-amount font-bold">••••••••</span>'}
+              </h2>
+              ${renderEyeButton('dashboard_savings')}
+            </div>
             <small class="text-muted">${netSavings >= 0 ? 'Dòng tiền dương' : 'Chi vượt thu'}</small>
           </div>
         </div>
@@ -102,13 +128,14 @@ export class Dashboard {
           <div class="card flex items-center justify-between" style="background: var(--bg-subtle); border-left: 4px solid var(--primary-500); padding: var(--space-3) var(--space-4); flex-wrap: wrap; gap: var(--space-3);">
             <div class="flex items-center gap-3">
               <div class="badge badge-subtle"><i data-lucide="hand-coins" style="width: 16px; height: 16px;"></i></div>
-              <div>
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-semibold" style="font-size: var(--font-size-sm);">Sổ Vay & Nợ:</span>
-                <span class="text-muted" style="font-size: var(--font-size-sm); margin-left: 4px;">
-                  ${totalLend > 0 ? `Họ đang nợ bạn <strong class="text-income">${formatCurrency(totalLend)}</strong>` : ''}
+                <span class="text-muted" style="font-size: var(--font-size-sm);">
+                  ${totalLend > 0 ? `Họ đang nợ bạn <strong class="text-income">${isDebtsVisible ? formatCurrency(totalLend) : '••••••••'}</strong>` : ''}
                   ${totalLend > 0 && totalBorrow > 0 ? ' • ' : ''}
-                  ${totalBorrow > 0 ? `Bạn đang nợ <strong class="text-expense">${formatCurrency(totalBorrow)}</strong>` : ''}
+                  ${totalBorrow > 0 ? `Bạn đang nợ <strong class="text-expense">${isDebtsVisible ? formatCurrency(totalBorrow) : '••••••••'}</strong>` : ''}
                 </span>
+                ${renderEyeButton('dashboard_debts')}
               </div>
             </div>
             <button type="button" class="btn btn-secondary" id="btn-goto-debts" style="padding: 4px 10px; font-size: var(--font-size-xs);">
@@ -223,5 +250,8 @@ export class Dashboard {
         window.appInstance.switchView('analytics');
       });
     }
+
+    // Attach privacy toggle listeners for eye buttons
+    attachPrivacyListeners(this.container, () => this.render());
   }
 }
