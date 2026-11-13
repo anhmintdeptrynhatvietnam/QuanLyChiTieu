@@ -1,0 +1,426 @@
+/* ==========================================================================
+   UI Primitives & Redesign Components (Phase 01)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Bottom Sheet / Dialog Primitive
+   -------------------------------------------------------------------------- */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal, 250ms) ease;
+}
+
+.sheet-backdrop.sheet-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sheet-container {
+  background: var(--bg-surface, #ffffff);
+  width: 100%;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  border-top-left-radius: var(--radius-sheet, 24px);
+  border-top-right-radius: var(--radius-sheet, 24px);
+  box-shadow: var(--shadow-xl);
+  border-top: 1px solid var(--border-subtle);
+  transform: translateY(100%);
+  transition: transform var(--transition-normal, 250ms) cubic-bezier(0.32, 0.72, 0, 1);
+  padding-bottom: max(var(--space-4, 16px), env(safe-area-inset-bottom, 16px));
+}
+
+.sheet-backdrop.sheet-open .sheet-container {
+  transform: translateY(0);
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  background-color: var(--border-strong, #cbd5e1);
+  border-radius: var(--radius-full, 9999px);
+  margin: var(--space-2, 8px) auto 0;
+  flex-shrink: 0;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.sheet-title {
+  font-size: var(--font-size-lg, 1.125rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.sheet-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-2, 8px);
+  border-radius: var(--radius-md, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target-min, 44px);
+  min-height: var(--touch-target-min, 44px);
+  transition: color var(--transition-fast, 150ms), background-color var(--transition-fast, 150ms);
+}
+
+.sheet-close:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-subtle);
+}
+
+.sheet-body {
+  padding: var(--space-4, 16px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+}
+
+/* Desktop Sheet (≥768px): Centered modal dialog */
+@media (min-width: 768px) {
+  .sheet-backdrop {
+    align-items: center;
+    padding: var(--space-6, 24px);
+  }
+
+  .sheet-container {
+    max-width: 520px;
+    border-radius: var(--radius-card, 16px);
+    border: 1px solid var(--border-subtle);
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform var(--transition-normal, 250ms) cubic-bezier(0.16, 1, 0.3, 1),
+                opacity var(--transition-normal, 250ms) ease;
+    padding-bottom: var(--space-4, 16px);
+  }
+
+  .sheet-backdrop.sheet-open .sheet-container {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .sheet-handle {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. Category Grid
+   -------------------------------------------------------------------------- */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3, 12px);
+  padding: var(--space-2, 8px) 0;
+}
+
+@media (min-width: 768px) {
+  .category-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--space-4, 16px);
+  }
+}
+
+.category-grid-item {
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md, 12px);
+  padding: var(--space-2, 8px) var(--space-1, 4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  cursor: pointer;
+  transition: transform var(--transition-fast, 150ms) ease,
+              border-color var(--transition-fast, 150ms) ease,
+              background-color var(--transition-fast, 150ms) ease;
+  user-select: none;
+}
+
+.category-grid-item:hover {
+  background-color: var(--bg-subtle);
+}
+
+.category-grid-item:active {
+  transform: scale(0.95);
+}
+
+.category-grid-item.active {
+  border-color: var(--primary-500);
+  background-color: var(--primary-50);
+}
+
+.category-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full, 9999px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: transform var(--transition-fast, 150ms) ease;
+}
+
+.category-grid-item.active .category-icon-circle {
+  transform: scale(1.08);
+}
+
+.category-icon-add {
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+  border: 1.5px dashed var(--border-strong);
+}
+
+.category-name {
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.25;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.category-grid-item.active .category-name {
+  color: var(--primary-500);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   3. Wallet Picker Chips
+   -------------------------------------------------------------------------- */
+.wallet-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  overflow-x: auto;
+  padding: var(--space-1, 4px) 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.wallet-picker::-webkit-scrollbar {
+  display: none;
+}
+
+.wallet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  padding: 8px 14px;
+  border-radius: var(--radius-chip, 9999px);
+  background-color: var(--bg-surface);
+  border: 1.5px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all var(--transition-fast, 150ms) ease;
+}
+
+.wallet-chip:hover {
+  border-color: var(--border-strong);
+  background-color: var(--bg-subtle);
+}
+
+.wallet-chip.active {
+  border-color: var(--primary-500);
+  background-color: var(--primary-50);
+  color: var(--primary-500);
+  font-weight: 600;
+}
+
+.wallet-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wallet-chip-balance {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-muted);
+}
+
+.wallet-chip.active .wallet-chip-balance {
+  color: var(--primary-600);
+}
+
+/* --------------------------------------------------------------------------
+   4. Segmented Control
+   -------------------------------------------------------------------------- */
+.segmented {
+  display: flex;
+  background-color: var(--bg-subtle);
+  padding: 4px;
+  border-radius: var(--radius-lg, 12px);
+  gap: 4px;
+  user-select: none;
+}
+
+.segmented-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 8px);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 8px);
+  transition: all var(--transition-fast, 150ms) ease;
+}
+
+.segmented-item:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+.segmented-item.active {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+/* --------------------------------------------------------------------------
+   5. Buttons v2 (.btn-v2)
+   -------------------------------------------------------------------------- */
+.btn-v2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 8px);
+  padding: 10px 18px;
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: 600;
+  border-radius: var(--radius-btn, 12px);
+  border: 1px solid transparent;
+  cursor: pointer;
+  line-height: 1.25;
+  text-decoration: none;
+  user-select: none;
+  min-height: var(--touch-target-min, 44px);
+  transition: all var(--transition-fast, 150ms) ease;
+}
+
+.btn-v2:active {
+  transform: scale(0.98);
+}
+
+.btn-v2:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-v2-primary {
+  background-color: var(--primary-500);
+  border-color: var(--primary-500);
+  color: var(--text-inverse);
+}
+
+.btn-v2-primary:hover:not(:disabled) {
+  background-color: var(--primary-600);
+  border-color: var(--primary-600);
+}
+
+.btn-v2-secondary {
+  background-color: var(--bg-surface);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.btn-v2-secondary:hover:not(:disabled) {
+  background-color: var(--bg-subtle);
+  border-color: var(--border-strong);
+}
+
+.btn-v2-danger {
+  background-color: var(--expense-primary);
+  border-color: var(--expense-primary);
+  color: var(--text-inverse);
+}
+
+.btn-v2-danger:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+/* --------------------------------------------------------------------------
+   6. Cards v2 (.card-v2)
+   -------------------------------------------------------------------------- */
+.card-v2 {
+  background: var(--bg-surface);
+  border-radius: var(--radius-card, 16px);
+  border: 1px solid var(--border-subtle);
+  padding: var(--space-4, 16px);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast, 150ms) ease;
+}
+
+/* --------------------------------------------------------------------------
+   7. List Rows v2 (.row-v2)
+   -------------------------------------------------------------------------- */
+.row-v2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px var(--space-4, 16px);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color var(--transition-fast, 150ms) ease;
+}
+
+.row-v2:last-child {
+  border-bottom: none;
+}
+
+.row-v2:hover {
+  background-color: var(--bg-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   8. Reduced Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .sheet-backdrop,
+  .sheet-container,
+  .category-grid-item,
+  .category-icon-circle,
+  .wallet-chip,
+  .segmented-item,
+  .btn-v2,
+  .row-v2 {
+    transition: none !important;
+    animation: none !important;
+  }
+}

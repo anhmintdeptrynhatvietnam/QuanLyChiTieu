@@ -6,7 +6,9 @@ import {
   parseFormattedNumber,
   formatDate,
   getMonthYear,
-  formatMonthYearDisplay
+  formatMonthYearDisplay,
+  formatAmountInput,
+  parseAmountInput
 } from '../js/utils/formatters.js';
 
 describe('formatters', () => {
@@ -71,6 +73,56 @@ describe('formatters', () => {
   describe('formatMonthYearDisplay', () => {
     it('formats YYYY-MM into readable month/year', () => {
       assert.equal(formatMonthYearDisplay('2026-03'), 'Tháng 3/2026');
+    });
+  });
+
+  describe('formatAmountInput', () => {
+    it('formats numbers and numeric strings with dot grouping', () => {
+      assert.equal(formatAmountInput(1000), '1.000');
+      assert.equal(formatAmountInput('1000000'), '1.000.000');
+      assert.equal(formatAmountInput(1234567), '1.234.567');
+      assert.equal(formatAmountInput('123'), '123');
+    });
+
+    it('handles zero values correctly', () => {
+      assert.equal(formatAmountInput(0), '0');
+      assert.equal(formatAmountInput('0'), '0');
+      assert.equal(formatAmountInput('000'), '0');
+    });
+
+    it('strips non-digits and leading zeros', () => {
+      assert.equal(formatAmountInput('05000'), '5.000');
+      assert.equal(formatAmountInput('1.500.000'), '1.500.000');
+      assert.equal(formatAmountInput('abc1234def'), '1.234');
+    });
+
+    it('returns empty string for empty or non-numeric inputs', () => {
+      assert.equal(formatAmountInput(''), '');
+      assert.equal(formatAmountInput(null), '');
+      assert.equal(formatAmountInput(undefined), '');
+      assert.equal(formatAmountInput('abc'), '');
+    });
+  });
+
+  describe('parseAmountInput', () => {
+    it('parses formatted numeric strings to integer', () => {
+      assert.equal(parseAmountInput('1.234.567'), 1234567);
+      assert.equal(parseAmountInput('100.000'), 100000);
+      assert.equal(parseAmountInput('500'), 500);
+    });
+
+    it('handles numeric input passthrough', () => {
+      assert.equal(parseAmountInput(1234567), 1234567);
+      assert.equal(parseAmountInput(100.75), 100);
+      assert.equal(parseAmountInput(0), 0);
+    });
+
+    it('returns 0 for empty or invalid inputs', () => {
+      assert.equal(parseAmountInput(''), 0);
+      assert.equal(parseAmountInput(null), 0);
+      assert.equal(parseAmountInput(undefined), 0);
+      assert.equal(parseAmountInput('abc'), 0);
+      assert.equal(parseAmountInput(NaN), 0);
     });
   });
 });

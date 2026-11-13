@@ -15,6 +15,7 @@ import { firebaseSyncService } from './services/firebase-sync.js';
 import { ExportImportService } from './services/export-import.js';
 import { confirmDialog } from './components/confirm-dialog.js';
 import { showToast } from './components/toast.js';
+import { initTheme, getThemePreference, setThemePreference } from './ui/theme.js';
 
 const viewTitles = {
   dashboard: 'Tổng quan',
@@ -29,17 +30,22 @@ const viewTitles = {
 class App {
   constructor() {
     this.currentView = 'dashboard';
-    this.theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     this.modal = null;
   }
 
+  get theme() {
+    return document.documentElement?.dataset?.theme || 'light';
+  }
+
   init() {
+    initTheme();
     window.setAppTheme = (theme) => this.applyTheme(theme);
     window.getAppTheme = () => this.theme;
-    this.applyTheme(this.theme);
+
     this.initComponents();
     this.setupNavigation();
     this.setupThemeToggle();
+    this.setupThemeListener();
     this.setupActionButtons();
     this.setupSyncStatusSubscriber();
     this.registerServiceWorker();
@@ -77,41 +83,52 @@ class App {
   }
 
   applyTheme(theme) {
-    this.theme = theme;
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
+    setThemePreference(theme);
+  }
 
-    const themeIcon = document.getElementById('theme-icon');
-    const themeText = document.getElementById('theme-text');
-
-    if (themeIcon && themeText) {
-      if (theme === 'dark') {
-        themeIcon.setAttribute('data-lucide', 'sun');
-        themeText.textContent = 'Chế độ sáng';
-      } else {
-        themeIcon.setAttribute('data-lucide', 'moon');
-        themeText.textContent = 'Chế độ tối';
+  setupThemeListener() {
+    window.addEventListener('themechange', () => {
+      this.updateSidebarThemeButton();
+      // Charts read CSS variables at creation time, so they go stale on toggle
+      if (this.currentView === 'analytics' && this.analytics) {
+        this.analytics.render();
       }
-      this.renderIcons();
-    }
-
-    // Charts read CSS variables at creation time, so they go stale on toggle
-    if (this.currentView === 'analytics' && this.analytics) {
-      this.analytics.render();
-    }
-
-    if (this.currentView === 'settings' && this.settings) {
-      this.settings.render();
-    }
+      if (this.currentView === 'settings' && this.settings) {
+        this.settings.render();
+      }
+    });
   }
 
   setupThemeToggle() {
     const toggleBtn = document.getElementById('btn-theme-toggle');
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
-        this.applyTheme(this.theme === 'dark' ? 'light' : 'dark');
+        const pref = getThemePreference();
+        // Cycle: light -> dark -> system -> light
+        const nextPref = pref === 'light' ? 'dark' : pref === 'dark' ? 'system' : 'light';
+        setThemePreference(nextPref);
       });
     }
+    this.updateSidebarThemeButton();
+  }
+
+  updateSidebarThemeButton() {
+    const themeIcon = document.getElementById('theme-icon');
+    const themeText = document.getElementById('theme-text');
+    if (!themeIcon || !themeText) return;
+
+    const pref = getThemePreference();
+    if (pref === 'dark') {
+      themeIcon.setAttribute('data-lucide', 'moon');
+      themeText.textContent = 'Chế độ tối';
+    } else if (pref === 'light') {
+      themeIcon.setAttribute('data-lucide', 'sun');
+      themeText.textContent = 'Chế độ sáng';
+    } else {
+      themeIcon.setAttribute('data-lucide', 'monitor');
+      themeText.textContent = 'Theo hệ thống';
+    }
+    this.renderIcons();
   }
 
   setupNavigation() {

@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Design system + khối UI dùng chung"
-status: pending
+status: completed
 dependencies: []
 ---
 

@@ -68,3 +68,21 @@ export function formatMonthYearDisplay(monthYearString) {
   const [year, month] = monthYearString.split('-');
   return `Tháng ${parseInt(month, 10)}/${year}`;
 }
+
+export function formatAmountInput(raw) {
+  if (raw === '' || raw === null || raw === undefined) return '';
+  const digits = String(raw).replace(/\D/g, '');
+  if (!digits) return '';
+  const normalized = digits.replace(/^0+(?=\d)/, '');
+  return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+export function parseAmountInput(text) {
+  if (typeof text === 'number') return isNaN(text) ? 0 : Math.trunc(text);
+  if (!text) return 0;
+  const clean = String(text).replace(/\D/g, '');
+  if (!clean) return 0;
+  const val = parseInt(clean, 10);
+  return isNaN(val) ? 0 : val;
+}
+

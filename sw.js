@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.8';
+const CACHE_NAME = 'qlct-pwa-v2.9';
 const CDN_CACHE = 'qlct-cdn-v1';
 
 const CDN_HOSTS = new Set([
@@ -22,6 +22,7 @@ const ASSETS_TO_CACHE = [
   './css/base.css',
   './css/components.css',
   './css/layouts.css',
+  './css/ui.css',
   './js/app.js',
   './js/config.js',
   './js/state.js',
@@ -53,6 +54,12 @@ const ASSETS_TO_CACHE = [
   './js/utils/helpers.js',
   './js/utils/modal-a11y.js',
   './js/utils/privacy.js',
+  './js/ui/bottom-sheet.js',
+  './js/ui/category-grid.js',
+  './js/ui/currency-input.js',
+  './js/ui/icons.js',
+  './js/ui/theme.js',
+  './js/ui/wallet-picker.js',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
   './assets/icons/apple-touch-icon.png',
