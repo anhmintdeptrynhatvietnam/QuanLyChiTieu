@@ -10,6 +10,7 @@ import { firebaseSyncService } from './services/firebase-sync.js';
 import { computeWalletBalances, findWalletReferences } from './domain/ledger.js';
 import { applyRepayment, canRepay } from './domain/debt-rules.js';
 import { sanitizeLegacySettings } from './domain/settings-migration.js';
+import { SYNCED_SETTINGS_KEYS } from './domain/sync-diff.js';
 
 class StateStore {
   constructor() {
@@ -28,12 +29,12 @@ class StateStore {
     this.initFirebase();
   }
 
-  initFirebase() {
+  async initFirebase() {
     try {
       const config = this.state.settings?.firebaseConfig || DEFAULT_FIREBASE_CONFIG;
-      firebaseAuthService.init(config);
+      await firebaseAuthService.init(config);
       firebaseAuthService.onAuthChange(async (user) => {
-        const lastAuthUid = localStorage.getItem('qlct_last_auth_uid');
+        const lastAuthUid = StorageService.get('qlct_last_auth_uid');
         this.state.settings.firebaseUser = user;
 
         if (user) {
@@ -50,9 +51,10 @@ class StateStore {
               this.recalculateWalletBalances();
             }
           }
-          localStorage.setItem('qlct_last_auth_uid', user.uid);
-          firebaseSyncService.startSync(user.uid, (table, items) => {
-            this.applyRemoteState(table, items);
+          StorageService.set('qlct_last_auth_uid', user.uid);
+          firebaseSyncService.startSync(user.uid, {
+            getState: () => this.state,
+            applyCollection: (c, r) => this.applyRemoteCollection(c, r)
           });
         } else {
           firebaseSyncService.stopSync();
@@ -65,28 +67,29 @@ class StateStore {
     }
   }
 
-  applyRemoteState(table, items) {
-    if (!items) return;
-    if (table === 'transactions') {
-      this.state.transactions = items;
-    } else if (table === 'wallets') {
-      this.state.wallets = items;
-    } else if (table === 'categories') {
-      this.state.categories = items;
-    } else if (table === 'budgets') {
-      this.state.budgets = items;
-    } else if (table === 'debts') {
-      this.state.debts = items;
-    } else if (table === 'settings' && typeof items === 'object') {
-      this.state.settings = { ...this.state.settings, ...items };
+  applyRemoteCollection(collection, records) {
+    if (!records) return;
+    if (collection === 'settings') {
+      const settingsRecord = Array.isArray(records) ? records[0] : records;
+      if (settingsRecord && typeof settingsRecord === 'object') {
+        const mergedSettings = { ...this.state.settings };
+        for (const key of SYNCED_SETTINGS_KEYS) {
+          if (settingsRecord[key] !== undefined) {
+            mergedSettings[key] = settingsRecord[key];
+          }
+        }
+        this.state.settings = mergedSettings;
+      }
+    } else {
+      this.state[collection] = records;
     }
 
-    if (['transactions', 'wallets', 'debts'].includes(table)) {
+    if (['transactions', 'wallets', 'debts'].includes(collection)) {
       this.recalculateWalletBalances();
     }
 
     this.saveToStorage();
-    this.listeners.forEach(fn => fn('remote:synced', { table, items }, this.state));
+    this.listeners.forEach(fn => fn('remote:synced', { collection }, this.state));
   }
 
   ensureUniqueCategoryColors() {
@@ -130,23 +133,7 @@ class StateStore {
 
     // Auto-sync with Firebase if active and not a remote update
     if (firebaseSyncService.isActive() && !firebaseSyncService.isApplyingRemote) {
-      if (event.startsWith('transaction:')) {
-        firebaseSyncService.scheduleSync('transactions', this.state.transactions);
-      } else if (event.startsWith('wallet:')) {
-        firebaseSyncService.scheduleSync('wallets', this.state.wallets);
-      } else if (event.startsWith('category:')) {
-        firebaseSyncService.scheduleSync('categories', this.state.categories);
-      } else if (event.startsWith('budget:')) {
-        firebaseSyncService.scheduleSync('budgets', this.state.budgets);
-      } else if (event.startsWith('debt:')) {
-        firebaseSyncService.scheduleSync('debts', this.state.debts);
-      } else if (event === 'settings:updated') {
-        firebaseSyncService.scheduleSync('settings', {
-          currency: this.state.settings.currency,
-          currencySymbol: this.state.settings.currencySymbol,
-          theme: this.state.settings.theme
-        });
-      }
+      firebaseSyncService.scheduleSync();
     }
   }
 

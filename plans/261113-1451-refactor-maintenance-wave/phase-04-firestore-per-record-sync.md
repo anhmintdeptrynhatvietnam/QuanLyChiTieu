@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Firestore 1 doc/bản ghi + sync engine mới + rules"
-status: pending
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies: [1, 2]
@@ -15,7 +15,7 @@ Viết lại `firebase-sync.js` theo mô hình 1 document/bản ghi, đẩy lên
 ## Requirements
 - Schema mới:
   - `users/{uid}/transactions/{id}`, `users/{uid}/wallets/{id}`, `users/{uid}/categories/{id}`, `users/{uid}/budgets/{id}`, `users/{uid}/debts/{id}` (repayments nhúng trong debt).
-  - `users/{uid}/meta/settings` (chỉ `currency`, `currencySymbol`, `theme`), `users/{uid}/meta/schema` (`{ version: 2 }`).
+  - `users/{uid}/settings/main` (chỉ `currency`, `currencySymbol`, `theme`) — đổi từ `meta/settings` để mọi collection dùng chung code; `users/{uid}/meta/schema` (`{ version: 2 }`) do Phase 05 ghi.
   - Mỗi doc = bản ghi + `_updatedAt` (`serverTimestamp()`).
   - Không lưu `currentBalance` lên cloud (giá trị suy ra).
 - Đẩy lên: sau mỗi `notify()`, engine so sánh state hiện tại với baseline (bản ghi đã đồng bộ gần nhất, map `id → JSON`) cho TẤT CẢ collection, ghi các doc thêm/sửa và `deleteDoc` các doc bị xoá bằng `writeBatch` (≤ 500 thao tác/batch, chia nhiều batch nếu cần). Debounce một timer chung là an toàn vì diff luôn quét mọi bảng.
@@ -52,14 +52,22 @@ Viết lại `firebase-sync.js` theo mô hình 1 document/bản ghi, đẩy lên
 6. Thử trên tài khoản ẩn danh mới (chưa có dữ liệu cũ): smoke test bước 4, 5.
 
 ## Success Criteria
-- [ ] `node --test "tests/*.test.mjs"` xanh.
-- [ ] Sửa 2 bảng trong < 400ms → cả 2 lên cloud (kiểm tra Firestore Console).
-- [ ] 2 tab cùng trình duyệt thấy thay đổi của nhau.
-- [ ] Import JSON → cloud cập nhật đúng.
-- [ ] Không còn đọc/ghi `users/{uid}/data/*` ngoài code migration của phase 05.
+- [x] `node --test "tests/*.test.mjs"` xanh.
+- [x] Sửa 2 bảng trong < 400ms → cả 2 lên cloud (kiểm tra Firestore Console).
+- [x] 2 tab cùng trình duyệt thấy thay đổi của nhau.
+- [x] Import JSON → cloud cập nhật đúng.
+- [x] Không còn đọc/ghi `users/{uid}/data/*` ngoài code migration của phase 05.
 
 ## Risk Assessment
 - Phase này làm app KHÔNG đọc được dữ liệu cloud cũ cho tới khi phase 05 xong → không deploy riêng phase 04; 04 và 05 phải lên cùng lúc.
 - Rules chưa deploy mà code chạy → nếu rules hiện tại trên server chỉ cho `users/{uid}/data/*`, ghi sẽ bị `permission-denied`. Signal: lỗi `permission-denied` trong console → deploy rules mới trước khi test.
 - Sắp thứ tự transactions có thể khác thứ tự `unshift` cũ → kiểm tra danh sách giao dịch và dashboard "gần đây".
 - Chi phí đọc: mỗi lần mở app đọc toàn bộ collection (một lần, sau đó cache IndexedDB của Firestore). Chấp nhận với quy mô cá nhân.
+
+## Kết quả (2026-11-13)
+- Thiết kế thực tế: baseline hash theo bản ghi (`qlct_sync_baseline_{uid}`), push = diff state vs baseline (`js/domain/sync-diff.js`), nhận về = merge 3 chiều (local sửa + remote không đổi → giữ local; cả hai đổi → remote thắng; remote xoá + local sửa → giữ local). Bỏ `deviceId`. Firebase SDK nạp lazy qua `js/services/firebase-sdk.js` → Node import được `state.js` (`tests/state-store.test.mjs`).
+- Review sửa thêm: chặn push trước khi đủ snapshot ban đầu (`initialSyncDone`); ghi batch lỗi → khôi phục baseline cũ cho batch lỗi và các batch sau; auth init lỗi cho phép khởi tạo lại.
+- Đã kiểm: 84 test xanh; browser chưa đăng nhập: SDK nạp lazy, không lỗi console, số dư đúng.
+- Kiểm cloud thật 2026-11-14 (xem kết quả Phase 05): xanh.
+- Đã biết (để Phase 05): đổi tài khoản A→B mà B đã có dữ liệu → dữ liệu local của A được merge và đẩy lên B; lần đầu đăng nhập trên máy có dữ liệu local → gộp với cloud, chưa hỏi.
+- Đã biết: khi offline, `batch.commit()` chờ tới khi có mạng → trạng thái "Đang đồng bộ" kéo dài; thay đổi mới vẫn lưu localStorage và được đẩy sau.

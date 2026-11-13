@@ -1,55 +1,60 @@
 /**
- * Firebase Firestore Realtime Sync Service
+ * Firebase Firestore Record-Level Realtime Sync Service
  */
-import {
-  getFirestore,
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-  doc,
-  setDoc,
-  getDoc,
-  onSnapshot
-} from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { loadFirebaseSdk } from './firebase-sdk.js';
 import { firebaseAuthService } from './firebase-auth.js';
-import { generateId } from '../utils/helpers.js';
+import { StorageService } from './storage.js';
+import {
+  SYNC_COLLECTIONS,
+  SETTINGS_RECORD_ID,
+  SYNCED_SETTINGS_KEYS,
+  snapshotLocal,
+  diffForPush,
+  applyPushToBaseline,
+  mergeRemoteChanges,
+  fromCloudRecord,
+  settingsToRecord,
+  hashRecord
+} from '../domain/sync-diff.js';
 
 class FirebaseSyncService {
   constructor() {
     this.db = null;
+    this.firestoreModule = null;
     this.unsubscribers = [];
     this.userId = null;
-    this.deviceId = this.getOrCreateDeviceId();
     this.isListening = false;
     this.statusListeners = new Set();
     this.currentStatus = { status: 'disconnected', message: 'Chưa kết nối Firebase', lastSync: null };
     this.pushTimeout = null;
+    this.isFlushing = false;
     this.isApplyingRemote = false;
+    // Pushes are held until every collection delivered its initial snapshot,
+    // otherwise an empty baseline would make local defaults overwrite cloud records.
+    this.initialSyncDone = false;
+    this.baseline = {};
+    this.getState = null;
+    this.applyCollection = null;
   }
 
-  getOrCreateDeviceId() {
-    let id = localStorage.getItem('qlct_device_id');
-    if (!id) {
-      id = generateId('dev');
-      localStorage.setItem('qlct_device_id', id);
+  async initDb() {
+    if (this.db && this.firestoreModule) {
+      return { db: this.db, fs: this.firestoreModule };
     }
-    return id;
-  }
-
-  initDb() {
-    if (this.db) return this.db;
+    await firebaseAuthService.ensureReady();
+    const { firestore } = await loadFirebaseSdk();
+    this.firestoreModule = firestore;
     const app = firebaseAuthService.getAppInstance();
     try {
-      this.db = initializeFirestore(app, {
-        localCache: persistentLocalCache({
-          tabManager: persistentMultipleTabManager()
+      this.db = firestore.initializeFirestore(app, {
+        localCache: firestore.persistentLocalCache({
+          tabManager: firestore.persistentMultipleTabManager()
         })
       });
     } catch (e) {
-      // Fallback if already initialized
-      this.db = getFirestore(app);
+      this.db = firestore.getFirestore(app);
     }
-    return this.db;
+    return { db: this.db, fs: this.firestoreModule };
   }
 
   getStatus() {
@@ -78,162 +83,355 @@ class FirebaseSyncService {
   }
 
   /**
-   * Start listening to Firestore changes for the current user
+   * Start listening to Firestore changes for the user.
+   *
+   * @param {string} userId
+   * @param {{ getState: function(): Object, applyCollection: function(string, Array): void }|function} options
    */
-  startSync(userId, onRemoteUpdateCallback) {
+  async startSync(userId, options) {
     if (!userId) return;
     this.stopSync();
 
     this.userId = userId;
-    this.initDb();
+    this.isListening = true;
+
+    if (typeof options === 'function') {
+      this.applyCollection = options;
+      this.getState = () => ({});
+    } else if (options) {
+      this.getState = options.getState;
+      this.applyCollection = options.applyCollection;
+    }
+
+    this.baseline = StorageService.get(`qlct_sync_baseline_${userId}`, {}) || {};
+    for (const col of SYNC_COLLECTIONS) {
+      if (!this.baseline[col]) this.baseline[col] = {};
+    }
+
     this.updateStatus('syncing', 'Đang kết nối Realtime...');
 
-    const tables = ['transactions', 'wallets', 'categories', 'budgets', 'debts', 'settings'];
+    try {
+      const { db, fs } = await this.initDb();
+      if (!this.isActive() || this.userId !== userId) return;
 
-    tables.forEach(table => {
-      const docRef = doc(this.db, 'users', userId, 'data', table);
-      const unsub = onSnapshot(docRef, { includeMetadataChanges: true }, (snapshot) => {
-        // Skip if change originated from this client pending write
-        if (snapshot.metadata.hasPendingWrites) {
-          return;
-        }
+      const pendingCollections = new Set(SYNC_COLLECTIONS);
 
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          // Kiểm tra nếu thay đổi từ chính thiết bị này gửi lên
-          if (data && data._lastDeviceId === this.deviceId) {
-            return;
-          }
+      SYNC_COLLECTIONS.forEach(col => {
+        const colRef = fs.collection(db, 'users', userId, col);
+        let isInitial = true;
 
-          if (data && data.items !== undefined && onRemoteUpdateCallback) {
-            this.isApplyingRemote = true;
-            try {
-              onRemoteUpdateCallback(table, data.items, data.updatedAt);
-            } finally {
-              this.isApplyingRemote = false;
+        const unsub = fs.onSnapshot(colRef, { includeMetadataChanges: false }, (snapshot) => {
+          try {
+            const cloudIds = isInitial ? new Set(snapshot.docs.map(d => d.id)) : null;
+            const changes = snapshot.docChanges().map(change => ({
+              type: change.type, // 'added' | 'modified' | 'removed'
+              id: change.doc.id,
+              data: change.type === 'removed' ? undefined : fromCloudRecord(change.doc.data())
+            }));
+
+            const currentState = this.getState ? this.getState() : {};
+            let localRecords;
+            if (col === 'settings') {
+              localRecords = [settingsToRecord(currentState.settings || {})];
+            } else {
+              localRecords = Array.isArray(currentState[col]) ? currentState[col] : [];
             }
+
+            const baselineMap = this.baseline[col] || {};
+            const result = mergeRemoteChanges({
+              collection: col,
+              localRecords,
+              baselineMap,
+              changes,
+              isInitial,
+              cloudIds
+            });
+
+            this.baseline[col] = result.baselineMap;
+            StorageService.set(`qlct_sync_baseline_${this.userId}`, this.baseline);
+
+            if (result.changed && this.applyCollection) {
+              this.isApplyingRemote = true;
+              try {
+                this.applyCollection(col, result.records);
+              } finally {
+                this.isApplyingRemote = false;
+              }
+            }
+
+            if (isInitial) {
+              isInitial = false;
+              pendingCollections.delete(col);
+              if (pendingCollections.size === 0) {
+                this.initialSyncDone = true;
+                this.updateStatus('connected', 'Đã kết nối Realtime');
+                this.scheduleSync();
+              }
+            }
+          } catch (err) {
+            console.error(`Lỗi xử lý snapshot [${col}]:`, err);
+            this.updateStatus('error', 'Lỗi xử lý dữ liệu Cloud: ' + err.message);
           }
-        }
-      }, (err) => {
-        console.error(`Lỗi realtime listener [${table}]:`, err);
-        this.updateStatus('error', 'Lỗi kết nối Realtime: ' + err.message);
+        }, (err) => {
+          console.error(`Lỗi realtime listener [${col}]:`, err);
+          this.updateStatus('error', 'Lỗi kết nối Realtime: ' + err.message);
+        });
+
+        this.unsubscribers.push(unsub);
       });
-
-      this.unsubscribers.push(unsub);
-    });
-
-    this.isListening = true;
-    this.updateStatus('connected', 'Đã kết nối Realtime');
+    } catch (err) {
+      console.error('Lỗi khởi tạo startSync:', err);
+      this.updateStatus('error', 'Lỗi khởi tạo Realtime: ' + err.message);
+    }
   }
 
   stopSync() {
-    this.unsubscribers.forEach(unsub => unsub());
+    if (this.pushTimeout) {
+      clearTimeout(this.pushTimeout);
+      this.pushTimeout = null;
+    }
+    this.unsubscribers.forEach(unsub => {
+      try { unsub(); } catch (e) { console.error(e); }
+    });
     this.unsubscribers = [];
     this.isListening = false;
+    this.initialSyncDone = false;
     this.userId = null;
     this.updateStatus('disconnected', 'Đã ngắt kết nối');
   }
 
   /**
-   * Debounced sync local changes to Firestore
+   * Debounced sync local changes to Firestore across all collections.
    */
-  scheduleSync(table, items) {
-    if (!this.isActive() || this.isApplyingRemote) return;
+  scheduleSync() {
+    // Before the initial snapshots arrive the baseline is incomplete; startSync
+    // calls scheduleSync() itself once they have all been merged.
+    if (!this.isActive() || this.isApplyingRemote || !this.initialSyncDone) return;
 
     this.updateStatus('syncing', 'Đang đồng bộ lên Cloud...');
 
-    if (this.pushTimeout) clearTimeout(this.pushTimeout);
+    if (this.pushTimeout) {
+      clearTimeout(this.pushTimeout);
+    }
+
     this.pushTimeout = setTimeout(async () => {
+      this.pushTimeout = null;
+      if (this.isFlushing) {
+        this.scheduleSync();
+        return;
+      }
+      this.isFlushing = true;
       try {
-        await this.pushTable(table, items);
-        this.updateStatus('connected', 'Đã đồng bộ');
-      } catch (err) {
-        console.error(`Lỗi khi đẩy dữ liệu [${table}]:`, err);
-        this.updateStatus('error', 'Lỗi đồng bộ: ' + err.message);
+        await this.flushSync();
+      } finally {
+        this.isFlushing = false;
       }
     }, 400);
   }
 
-  async pushTable(table, items) {
-    if (!this.userId) return;
-    this.initDb();
-    const docRef = doc(this.db, 'users', this.userId, 'data', table);
-    await setDoc(docRef, {
-      items: items,
-      _lastDeviceId: this.deviceId,
-      updatedAt: new Date().toISOString()
-    });
+  async flushSync() {
+    if (!this.isActive()) return;
+
+    const currentState = this.getState ? this.getState() : {};
+    const localSnap = snapshotLocal(currentState);
+    const diff = diffForPush(localSnap, this.baseline);
+
+    if (diff.upserts.length === 0 && diff.deletes.length === 0) {
+      this.updateStatus('connected', 'Đã đồng bộ');
+      return;
+    }
+
+    try {
+      const { db, fs } = await this.initDb();
+      if (!this.isActive()) return;
+
+      const allOps = [];
+      for (const up of diff.upserts) {
+        allOps.push({ type: 'upsert', ...up });
+      }
+      for (const del of diff.deletes) {
+        allOps.push({ type: 'delete', ...del });
+      }
+
+      const previousBaseline = this.baseline;
+      this.baseline = applyPushToBaseline(this.baseline, diff);
+      StorageService.set(`qlct_sync_baseline_${this.userId}`, this.baseline);
+
+      for (let i = 0; i < allOps.length; i += 450) {
+        const chunk = allOps.slice(i, i + 450);
+        try {
+          const batch = fs.writeBatch(db);
+          for (const op of chunk) {
+            const docRef = fs.doc(db, 'users', this.userId, op.collection, String(op.id));
+            if (op.type === 'upsert') {
+              batch.set(docRef, { ...op.data, _updatedAt: fs.serverTimestamp() });
+            } else {
+              batch.delete(docRef);
+            }
+          }
+          await batch.commit();
+        } catch (err) {
+          console.error('Lỗi khi ghi batch Firestore:', err);
+          this.updateStatus('error', 'Lỗi đồng bộ: ' + err.message);
+          // Roll back this chunk and every later (unwritten) chunk to the
+          // pre-push baseline so the next flush retries both upserts and deletes.
+          for (const op of allOps.slice(i)) {
+            const col = this.baseline[op.collection] || (this.baseline[op.collection] = {});
+            const prevHash = previousBaseline[op.collection]?.[op.id];
+            if (prevHash === undefined) {
+              delete col[op.id];
+            } else {
+              col[op.id] = prevHash;
+            }
+          }
+          StorageService.set(`qlct_sync_baseline_${this.userId}`, this.baseline);
+          return;
+        }
+      }
+
+      this.updateStatus('connected', 'Đã đồng bộ');
+    } catch (err) {
+      console.error('Lỗi flushSync:', err);
+      this.updateStatus('error', 'Lỗi đồng bộ: ' + err.message);
+    }
   }
 
   /**
-   * Đẩy toàn bộ dữ liệu máy hiện tại lên Cloud (Initial Upload)
+   * Overwrite Cloud with all local data.
+   *
+   * @param {Object} state
    */
   async pushAllData(state) {
     if (!this.userId) throw new Error('Chưa đăng nhập Firebase');
-    this.initDb();
+    const { db, fs } = await this.initDb();
     this.updateStatus('syncing', 'Đang tải toàn bộ dữ liệu lên...');
 
-    const tables = {
-      transactions: state.transactions || [],
-      wallets: state.wallets || [],
-      categories: state.categories || [],
-      budgets: state.budgets || [],
-      debts: state.debts || [],
-      settings: {
-        currency: state.settings?.currency || 'VND',
-        currencySymbol: state.settings?.currencySymbol || '₫',
-        theme: state.settings?.theme || 'light'
+    try {
+      const localSnap = snapshotLocal(state);
+      const allOps = [];
+
+      for (const col of SYNC_COLLECTIONS) {
+        const colRef = fs.collection(db, 'users', this.userId, col);
+        const snap = await fs.getDocs(colRef);
+        const cloudIds = new Set(snap.docs.map(d => d.id));
+        const localMap = localSnap[col] || {};
+
+        for (const [id, data] of Object.entries(localMap)) {
+          allOps.push({
+            type: 'set',
+            collection: col,
+            id,
+            data
+          });
+          cloudIds.delete(id);
+        }
+
+        if (col !== 'settings') {
+          for (const cloudId of cloudIds) {
+            allOps.push({
+              type: 'delete',
+              collection: col,
+              id: cloudId
+            });
+          }
+        }
       }
-    };
 
-    for (const [table, items] of Object.entries(tables)) {
-      await this.pushTable(table, items);
+      for (let i = 0; i < allOps.length; i += 450) {
+        const chunk = allOps.slice(i, i + 450);
+        const batch = fs.writeBatch(db);
+        for (const op of chunk) {
+          const docRef = fs.doc(db, 'users', this.userId, op.collection, String(op.id));
+          if (op.type === 'set') {
+            batch.set(docRef, { ...op.data, _updatedAt: fs.serverTimestamp() });
+          } else {
+            batch.delete(docRef);
+          }
+        }
+        await batch.commit();
+      }
+
+      this.baseline = {};
+      for (const col of SYNC_COLLECTIONS) {
+        this.baseline[col] = {};
+        for (const [id, data] of Object.entries(localSnap[col] || {})) {
+          this.baseline[col][id] = hashRecord(data);
+        }
+      }
+      StorageService.set(`qlct_sync_baseline_${this.userId}`, this.baseline);
+
+      this.updateStatus('connected', 'Đã tải toàn bộ dữ liệu lên Cloud');
+    } catch (err) {
+      console.error('Lỗi đẩy toàn bộ dữ liệu:', err);
+      this.updateStatus('error', 'Lỗi tải lên Cloud: ' + err.message);
+      throw err;
     }
-
-    this.updateStatus('connected', 'Đã tải toàn bộ dữ liệu lên Cloud');
   }
 
   /**
-   * Kéo toàn bộ dữ liệu từ Cloud về máy
+   * Pull all collections from Cloud.
+   *
+   * @returns {Promise<Object>}
    */
   async pullAllData() {
     if (!this.userId) throw new Error('Chưa đăng nhập Firebase');
-    this.initDb();
+    const { db, fs } = await this.initDb();
     this.updateStatus('syncing', 'Đang tải dữ liệu từ Cloud về...');
 
-    const tables = ['transactions', 'wallets', 'categories', 'budgets', 'debts', 'settings'];
-    const result = {};
+    try {
+      const result = {
+        transactions: [],
+        wallets: [],
+        categories: [],
+        budgets: [],
+        debts: [],
+        settings: {}
+      };
 
-    for (const table of tables) {
-      const docRef = doc(this.db, 'users', this.userId, 'data', table);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        result[table] = data.items;
+      for (const col of ['transactions', 'wallets', 'categories', 'budgets', 'debts']) {
+        const colRef = fs.collection(db, 'users', this.userId, col);
+        const snap = await fs.getDocs(colRef);
+        result[col] = snap.docs.map(d => fromCloudRecord(d.data()));
       }
-    }
 
-    this.updateStatus('connected', 'Đã tải dữ liệu từ Cloud về máy');
-    return result;
+      const settingsDocRef = fs.doc(db, 'users', this.userId, 'settings', SETTINGS_RECORD_ID);
+      const settingsSnap = await fs.getDoc(settingsDocRef);
+      if (settingsSnap.exists()) {
+        const data = fromCloudRecord(settingsSnap.data());
+        const settingsObj = {};
+        for (const key of SYNCED_SETTINGS_KEYS) {
+          if (data[key] !== undefined) {
+            settingsObj[key] = data[key];
+          }
+        }
+        result.settings = settingsObj;
+      }
+
+      this.updateStatus('connected', 'Đã tải dữ liệu từ Cloud về máy');
+      return result;
+    } catch (err) {
+      console.error('Lỗi kéo toàn bộ dữ liệu:', err);
+      this.updateStatus('error', 'Lỗi tải từ Cloud: ' + err.message);
+      throw err;
+    }
   }
 
-  /**
-   * Kiểm tra xem Cloud đã có dữ liệu nào chưa
-   */
   async checkHasCloudData() {
     return this.checkHasCloudDataForUser(this.userId);
   }
 
   async checkHasCloudDataForUser(uid) {
     if (!uid) return false;
-    this.initDb();
-    const docRef = doc(this.db, 'users', uid, 'data', 'transactions');
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      const data = snap.data();
-      return Array.isArray(data.items) && data.items.length > 0;
+    try {
+      const { db, fs } = await this.initDb();
+      const colRef = fs.collection(db, 'users', uid, 'transactions');
+      const q = fs.query(colRef, fs.limit(1));
+      const snap = await fs.getDocs(q);
+      return !snap.empty;
+    } catch (err) {
+      console.error('Lỗi kiểm tra dữ liệu Cloud:', err);
+      return false;
     }
-    return false;
   }
 }
 
