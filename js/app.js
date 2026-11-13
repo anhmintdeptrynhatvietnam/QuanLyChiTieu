@@ -12,6 +12,9 @@ import { Settings } from './components/settings.js';
 import { TransactionModal } from './components/transaction-modal.js';
 import { firebaseAuthService } from './services/firebase-auth.js';
 import { firebaseSyncService } from './services/firebase-sync.js';
+import { ExportImportService } from './services/export-import.js';
+import { confirmDialog } from './components/confirm-dialog.js';
+import { showToast } from './components/toast.js';
 
 const viewTitles = {
   dashboard: 'Tổng quan',
@@ -64,6 +67,13 @@ class App {
     this.budgets = new Budgets('view-budgets');
     this.analytics = new Analytics('view-analytics');
     this.settings = new Settings('view-settings');
+
+    // Cloud sign-in preparation (legacy migration, first sign-in choice) needs these UI hooks.
+    stateStore.setCloudSessionUi({
+      confirm: confirmDialog,
+      backupLocal: () => ExportImportService.exportJSON(),
+      notify: showToast
+    });
   }
 
   applyTheme(theme) {

@@ -100,6 +100,9 @@ class FirebaseAuthService {
       return result.user;
     } catch (err) {
       console.error('Lỗi Đăng nhập Ẩn danh:', err);
+      if (err.code === 'auth/admin-restricted-operation' || err.code === 'auth/operation-not-allowed') {
+        throw new Error('Đăng nhập ẩn danh chưa được bật trong Firebase Console (Authentication -> Sign-in method -> Anonymous).');
+      }
       throw err;
     }
   }

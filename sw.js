@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.5';
+const CACHE_NAME = 'qlct-pwa-v2.6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -19,6 +19,8 @@ const ASSETS_TO_CACHE = [
   './js/domain/debt-rules.js',
   './js/domain/settings-migration.js',
   './js/domain/sync-diff.js',
+  './js/domain/legacy-migration.js',
+  './js/domain/account-switch.js',
   './js/components/dashboard.js',
   './js/components/transaction-list.js',
   './js/components/wallets.js',
@@ -33,6 +35,8 @@ const ASSETS_TO_CACHE = [
   './js/services/export-import.js',
   './js/services/firebase-auth.js',
   './js/services/firebase-sdk.js',
+  './js/services/firebase-migration.js',
+  './js/services/cloud-session.js',
   './js/services/firebase-sync.js',
   './js/utils/formatters.js',
   './js/utils/helpers.js',

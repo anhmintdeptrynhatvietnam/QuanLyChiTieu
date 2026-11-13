@@ -521,6 +521,40 @@ describe('mergeRemoteChanges', () => {
     assert.deepEqual(res.records.map(r => r.id), ['d2', 'd1', 'd3']);
   });
 
+  it('wallets sorting: built-ins in default order first, then user-created by createdAt asc', () => {
+    const remote = [
+      { id: 'wallet-bank', name: 'Bank' },
+      { id: 'wallet-a1', name: 'Later', createdAt: '2026-05-02T00:00:00Z' },
+      { id: 'wallet-cash', name: 'Cash' },
+      { id: 'wallet-z9', name: 'Earlier', createdAt: '2026-05-01T00:00:00Z' },
+      { id: 'wallet-unknown', name: 'Imported without createdAt' }
+    ];
+
+    const res = mergeRemoteChanges({
+      collection: 'wallets',
+      localRecords: [],
+      changes: remote.map(r => ({ type: 'added', id: r.id, data: r })),
+      isInitial: true,
+      cloudIds: new Set(remote.map(r => r.id)),
+      defaultOrder: ['wallet-cash', 'wallet-bank']
+    });
+
+    assert.deepEqual(res.records.map(r => r.id), ['wallet-cash', 'wallet-bank', 'wallet-unknown', 'wallet-z9', 'wallet-a1']);
+  });
+
+  it('categories sorting: order is stable without defaultOrder', () => {
+    const res = mergeRemoteChanges({
+      collection: 'categories',
+      localRecords: [],
+      changes: [
+        { type: 'added', id: 'c2', data: { id: 'c2', name: 'B' } },
+        { type: 'added', id: 'c1', data: { id: 'c1', name: 'A' } }
+      ]
+    });
+
+    assert.deepEqual(res.records.map(r => r.id), ['c1', 'c2']);
+  });
+
   it('wallets currentBalance ignored in hashing', () => {
     const localWallet = { id: 'w1', name: 'Cash', currentBalance: 9999999 };
     const cloudWallet = { id: 'w1', name: 'Cash' }; // cloud doesn't store currentBalance

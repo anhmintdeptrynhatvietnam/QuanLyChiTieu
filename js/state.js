@@ -11,10 +11,13 @@ import { computeWalletBalances, findWalletReferences } from './domain/ledger.js'
 import { applyRepayment, canRepay } from './domain/debt-rules.js';
 import { sanitizeLegacySettings } from './domain/settings-migration.js';
 import { SYNCED_SETTINGS_KEYS } from './domain/sync-diff.js';
+import { prepareCloudSession } from './services/cloud-session.js';
 
 class StateStore {
   constructor() {
     this.listeners = new Set();
+    this.authSeq = 0;
+    this.cloudSessionUiReady = new Promise(resolve => { this.resolveCloudSessionUi = resolve; });
     this.state = {
       transactions: StorageService.get(STORAGE_KEYS.TRANSACTIONS, []),
       wallets: StorageService.get(STORAGE_KEYS.WALLETS, DEFAULT_WALLETS),
@@ -34,37 +37,71 @@ class StateStore {
       const config = this.state.settings?.firebaseConfig || DEFAULT_FIREBASE_CONFIG;
       await firebaseAuthService.init(config);
       firebaseAuthService.onAuthChange(async (user) => {
-        const lastAuthUid = StorageService.get('qlct_last_auth_uid');
+        // Ignore results of an older auth event if a newer one arrived meanwhile.
+        const seq = ++this.authSeq;
         this.state.settings.firebaseUser = user;
 
-        if (user) {
-          // If switching accounts on the same browser (from user A to user B)
-          if (lastAuthUid && lastAuthUid !== user.uid) {
-            const hasCloud = await firebaseSyncService.checkHasCloudDataForUser(user.uid);
-            if (!hasCloud) {
-              // Brand new user -> Clean default state
-              this.state.transactions = [];
-              this.state.wallets = JSON.parse(JSON.stringify(DEFAULT_WALLETS));
-              this.state.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-              this.state.budgets = [];
-              this.state.debts = [];
-              this.recalculateWalletBalances();
-            }
+        if (!user) {
+          firebaseSyncService.stopSync();
+          this.saveToStorage();
+          this.listeners.forEach(fn => fn('auth:changed', user, this.state));
+          return;
+        }
+
+        firebaseSyncService.stopSync();
+        this.saveToStorage();
+        this.listeners.forEach(fn => fn('auth:changed', user, this.state));
+
+        try {
+          const ui = await this.cloudSessionUiReady;
+          const session = await prepareCloudSession({
+            uid: user.uid,
+            getState: () => this.state,
+            replaceLocal: (collections) => this.replaceLocalCollections(collections),
+            ui
+          });
+          if (seq !== this.authSeq) return;
+          if (!session.proceed) {
+            firebaseSyncService.updateStatus('error', 'Dữ liệu Cloud cần được nâng cấp trước khi đồng bộ (đăng nhập lại để nâng cấp).');
+            return;
           }
-          StorageService.set('qlct_last_auth_uid', user.uid);
           firebaseSyncService.startSync(user.uid, {
             getState: () => this.state,
             applyCollection: (c, r) => this.applyRemoteCollection(c, r)
           });
-        } else {
-          firebaseSyncService.stopSync();
+        } catch (err) {
+          console.error('Lỗi chuẩn bị phiên đồng bộ Cloud:', err);
+          firebaseSyncService.updateStatus('error', 'Lỗi chuẩn bị đồng bộ Cloud: ' + err.message);
         }
-        this.saveToStorage();
-        this.listeners.forEach(fn => fn('auth:changed', user, this.state));
       });
     } catch (err) {
       console.warn('Khởi tạo Firebase thất bại:', err);
     }
+  }
+
+  /**
+   * Register the UI used while preparing a cloud session (confirm dialogs,
+   * backup download, toasts). Sign-in handling waits until this is called.
+   *
+   * @param {{ confirm: Function, backupLocal: Function, notify: Function }} ui
+   */
+  setCloudSessionUi(ui) {
+    this.resolveCloudSessionUi(ui);
+  }
+
+  /**
+   * Replace local data collections wholesale (account switch / using cloud data).
+   * Not pushed to the cloud by itself: sync starts afterwards with a cleared baseline.
+   *
+   * @param {{ transactions?: Array, wallets?: Array, categories?: Array, budgets?: Array, debts?: Array }} collections
+   */
+  replaceLocalCollections(collections) {
+    for (const key of ['transactions', 'wallets', 'categories', 'budgets', 'debts']) {
+      if (Array.isArray(collections[key])) this.state[key] = collections[key];
+    }
+    this.recalculateWalletBalances();
+    this.saveToStorage();
+    this.listeners.forEach(fn => fn('data:replaced', null, this.state));
   }
 
   applyRemoteCollection(collection, records) {

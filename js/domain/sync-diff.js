@@ -220,6 +220,57 @@ function compareDesc(a, b) {
 }
 
 /**
+ * Comparator reproducing the local insertion order of wallets/categories, which
+ * Firestore does not keep (documents come back sorted by id): built-in records
+ * (no createdAt) first in `defaultOrder`, then user-created ones by createdAt ascending.
+ *
+ * @param {string[]} defaultOrder
+ * @returns {(a: Object, b: Object) => number}
+ */
+export function compareCreationOrder(defaultOrder = []) {
+  const rank = new Map(defaultOrder.map((id, i) => [String(id), i]));
+  const rankOf = (r) => (rank.has(String(r?.id)) ? rank.get(String(r?.id)) : Infinity);
+  const byId = (a, b) => (String(a?.id) < String(b?.id) ? -1 : String(a?.id) > String(b?.id) ? 1 : 0);
+
+  return (a, b) => {
+    const ca = a?.createdAt ? String(a.createdAt) : '';
+    const cb = b?.createdAt ? String(b.createdAt) : '';
+    if (!ca !== !cb) return ca ? 1 : -1;
+    if (!ca) {
+      const diff = rankOf(a) - rankOf(b);
+      if (diff !== 0 && !Number.isNaN(diff)) return diff;
+      return byId(a, b);
+    }
+    if (ca !== cb) return ca < cb ? -1 : 1;
+    return byId(a, b);
+  };
+}
+
+/**
+ * Sort records of a collection (in place) into the order the app displays/stores them.
+ * Needed whenever records come from Firestore, which returns documents sorted by id.
+ *
+ * @param {string} collection
+ * @param {Array} records
+ * @param {string[]} [defaultOrder=[]] - ids of built-in wallets/categories in display order
+ * @returns {Array} the same array
+ */
+export function sortCollectionRecords(collection, records, defaultOrder = []) {
+  if (collection === 'transactions') {
+    records.sort((t1, t2) => {
+      const dComp = compareDesc(t1?.date, t2?.date);
+      if (dComp !== 0) return dComp;
+      return compareDesc(t1?.createdAt, t2?.createdAt);
+    });
+  } else if (collection === 'debts') {
+    records.sort((d1, d2) => compareDesc(d1?.createdAt, d2?.createdAt));
+  } else if (collection === 'wallets' || collection === 'categories') {
+    records.sort(compareCreationOrder(defaultOrder));
+  }
+  return records;
+}
+
+/**
  * 3-way merge remote collection changes against local records and baseline map.
  *
  * @param {Object} options
@@ -229,6 +280,7 @@ function compareDesc(a, b) {
  * @param {Array<{ type: 'added'|'modified'|'removed', id: string, data?: Object }>} [options.changes=[]]
  * @param {boolean} [options.isInitial=false]
  * @param {Set<string>|null} [options.cloudIds=null]
+ * @param {string[]} [options.defaultOrder=[]] - ids of built-in wallets/categories in display order
  * @returns {{ records: Array, baselineMap: Record<string, string>, changed: boolean }}
  */
 export function mergeRemoteChanges({
@@ -237,7 +289,8 @@ export function mergeRemoteChanges({
   baselineMap = {},
   changes = [],
   isInitial = false,
-  cloudIds = null
+  cloudIds = null,
+  defaultOrder = []
 }) {
   let records = Array.isArray(localRecords) ? localRecords.map(r => ({ ...r })) : [];
   const newBaseline = { ...(baselineMap || {}) };
@@ -298,15 +351,7 @@ export function mergeRemoteChanges({
     records = retained;
   }
 
-  if (collection === 'transactions') {
-    records.sort((t1, t2) => {
-      const dComp = compareDesc(t1?.date, t2?.date);
-      if (dComp !== 0) return dComp;
-      return compareDesc(t1?.createdAt, t2?.createdAt);
-    });
-  } else if (collection === 'debts') {
-    records.sort((d1, d2) => compareDesc(d1?.createdAt, d2?.createdAt));
-  }
+  sortCollectionRecords(collection, records, defaultOrder);
 
   const inputMap = new Map();
   for (const r of (localRecords || [])) {

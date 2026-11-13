@@ -4,6 +4,7 @@
 import { loadFirebaseSdk } from './firebase-sdk.js';
 import { firebaseAuthService } from './firebase-auth.js';
 import { StorageService } from './storage.js';
+import { DEFAULT_WALLETS, DEFAULT_CATEGORIES } from '../config.js';
 import {
   SYNC_COLLECTIONS,
   SETTINGS_RECORD_ID,
@@ -12,10 +13,17 @@ import {
   diffForPush,
   applyPushToBaseline,
   mergeRemoteChanges,
+  sortCollectionRecords,
   fromCloudRecord,
   settingsToRecord,
   hashRecord
 } from '../domain/sync-diff.js';
+
+// Firestore returns documents sorted by id; built-in wallets/categories keep their config order.
+const DEFAULT_ORDER = {
+  wallets: DEFAULT_WALLETS.map(w => w.id),
+  categories: DEFAULT_CATEGORIES.map(c => c.id)
+};
 
 class FirebaseSyncService {
   constructor() {
@@ -144,7 +152,8 @@ class FirebaseSyncService {
               baselineMap,
               changes,
               isInitial,
-              cloudIds
+              cloudIds,
+              defaultOrder: DEFAULT_ORDER[col]
             });
 
             this.baseline[col] = result.baselineMap;
@@ -182,6 +191,22 @@ class FirebaseSyncService {
     } catch (err) {
       console.error('Lỗi khởi tạo startSync:', err);
       this.updateStatus('error', 'Lỗi khởi tạo Realtime: ' + err.message);
+    }
+  }
+
+  /**
+   * Forget what was last synced for a user. Must be called whenever local data is
+   * replaced wholesale (account switch, "use cloud data"); otherwise the stale
+   * baseline makes the emptied local state look like deletions and wipes the cloud.
+   *
+   * @param {string} uid
+   */
+  clearBaseline(uid) {
+    if (!uid) return;
+    StorageService.remove(`qlct_sync_baseline_${uid}`);
+    if (uid === this.userId) {
+      this.baseline = {};
+      for (const col of SYNC_COLLECTIONS) this.baseline[col] = {};
     }
   }
 
@@ -299,10 +324,14 @@ class FirebaseSyncService {
   /**
    * Overwrite Cloud with all local data.
    *
+   * Can run before startSync() (e.g. when the user chooses to overwrite the cloud on first sign-in);
+   * the baseline is persisted for that uid so the next startSync() sees everything as synced.
+   *
    * @param {Object} state
+   * @param {string} [uid] - defaults to the currently synced user
    */
-  async pushAllData(state) {
-    if (!this.userId) throw new Error('Chưa đăng nhập Firebase');
+  async pushAllData(state, uid = this.userId) {
+    if (!uid) throw new Error('Chưa đăng nhập Firebase');
     const { db, fs } = await this.initDb();
     this.updateStatus('syncing', 'Đang tải toàn bộ dữ liệu lên...');
 
@@ -311,7 +340,7 @@ class FirebaseSyncService {
       const allOps = [];
 
       for (const col of SYNC_COLLECTIONS) {
-        const colRef = fs.collection(db, 'users', this.userId, col);
+        const colRef = fs.collection(db, 'users', uid, col);
         const snap = await fs.getDocs(colRef);
         const cloudIds = new Set(snap.docs.map(d => d.id));
         const localMap = localSnap[col] || {};
@@ -341,7 +370,7 @@ class FirebaseSyncService {
         const chunk = allOps.slice(i, i + 450);
         const batch = fs.writeBatch(db);
         for (const op of chunk) {
-          const docRef = fs.doc(db, 'users', this.userId, op.collection, String(op.id));
+          const docRef = fs.doc(db, 'users', uid, op.collection, String(op.id));
           if (op.type === 'set') {
             batch.set(docRef, { ...op.data, _updatedAt: fs.serverTimestamp() });
           } else {
@@ -351,14 +380,15 @@ class FirebaseSyncService {
         await batch.commit();
       }
 
-      this.baseline = {};
+      const newBaseline = {};
       for (const col of SYNC_COLLECTIONS) {
-        this.baseline[col] = {};
+        newBaseline[col] = {};
         for (const [id, data] of Object.entries(localSnap[col] || {})) {
-          this.baseline[col][id] = hashRecord(data);
+          newBaseline[col][id] = hashRecord(data);
         }
       }
-      StorageService.set(`qlct_sync_baseline_${this.userId}`, this.baseline);
+      StorageService.set(`qlct_sync_baseline_${uid}`, newBaseline);
+      if (uid === this.userId) this.baseline = newBaseline;
 
       this.updateStatus('connected', 'Đã tải toàn bộ dữ liệu lên Cloud');
     } catch (err) {
@@ -391,7 +421,7 @@ class FirebaseSyncService {
       for (const col of ['transactions', 'wallets', 'categories', 'budgets', 'debts']) {
         const colRef = fs.collection(db, 'users', this.userId, col);
         const snap = await fs.getDocs(colRef);
-        result[col] = snap.docs.map(d => fromCloudRecord(d.data()));
+        result[col] = sortCollectionRecords(col, snap.docs.map(d => fromCloudRecord(d.data())), DEFAULT_ORDER[col]);
       }
 
       const settingsDocRef = fs.doc(db, 'users', this.userId, 'settings', SETTINGS_RECORD_ID);

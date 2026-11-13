@@ -78,6 +78,18 @@ export class Settings {
                     </button>
                   </div>
                 </div>
+                ${isFbConnected ? `
+                  <div class="flex gap-2" style="flex-wrap: wrap; margin-top: var(--space-3);">
+                    <button type="button" class="btn btn-secondary" id="btn-firebase-push-all" style="font-size: var(--font-size-xs); padding: 6px 14px;">
+                      <i data-lucide="cloud-upload" style="width: 14px; height: 14px;"></i>
+                      <span>Đẩy toàn bộ lên Cloud</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-firebase-pull-all" style="font-size: var(--font-size-xs); padding: 6px 14px;">
+                      <i data-lucide="cloud-download" style="width: 14px; height: 14px;"></i>
+                      <span>Kéo toàn bộ về máy</span>
+                    </button>
+                  </div>
+                ` : ''}
               </div>
             ` : `
               <!-- Sign In Action Buttons -->
@@ -300,27 +312,9 @@ export class Settings {
         try {
           showToast('Đang mở cửa sổ đăng nhập Google...', 'info');
           const user = await firebaseAuthService.signInWithGoogle();
+          // Local/cloud reconciliation (migration, first sign-in choice, account switch)
+          // runs in the state store's auth handler via cloud-session.js.
           showToast(`Chào mừng ${user.displayName || 'bạn'}! Đã kết nối Cloud thành công ⚡`, 'success');
-          
-          // Kiểm tra nếu cloud chưa có dữ liệu và máy có dữ liệu -> hỏi upload
-          const state = stateStore.getState();
-          if (state.transactions && state.transactions.length > 0) {
-            const hasCloud = await firebaseSyncService.checkHasCloudData();
-            if (!hasCloud) {
-              const doUpload = await confirmDialog(
-                `Hệ thống phát hiện thiết bị của bạn đang có ${state.transactions.length} giao dịch. Bạn có muốn đồng bộ toàn bộ dữ liệu này lên Cloud không?`,
-                {
-                  title: 'Đồng bộ dữ liệu ban đầu',
-                  confirmText: 'Tải lên Cloud ngay',
-                  cancelText: 'Để sau'
-                }
-              );
-              if (doUpload) {
-                await firebaseSyncService.pushAllData(state);
-                showToast('Đã tải toàn bộ dữ liệu lên Firebase Cloud thành công!', 'success');
-              }
-            }
-          }
         } catch (err) {
           showToast('Lỗi đăng nhập: ' + err.message, 'error');
         }
@@ -382,7 +376,9 @@ export class Settings {
         if (!ok) return;
         try {
           const cloudData = await firebaseSyncService.pullAllData();
-          if (cloudData.transactions) {
+          // pullAllData always returns arrays; an empty cloud must not wipe local wallets/categories.
+          const cloudHasRecords = ['transactions', 'wallets', 'categories', 'debts'].some(k => cloudData[k]?.length > 0);
+          if (cloudHasRecords) {
             stateStore.importAllData(cloudData);
             showToast(`Đã tải về ${cloudData.transactions.length} giao dịch từ Cloud thành công!`, 'success');
           } else {
