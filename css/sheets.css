@@ -1,0 +1,201 @@
+/* ==========================================================================
+   Transaction & Debt Sheets Styling (Phase 03)
+   ========================================================================== */
+
+/* Amount Hero Input Card */
+.amount-hero-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-card, 16px);
+  padding: var(--space-4, 16px);
+  border: 1px solid var(--border-subtle);
+  gap: var(--space-2, 8px);
+}
+
+.amount-label {
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.amount-hero-input {
+  font-size: 2.25rem; /* ~36px */
+  font-weight: 700;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  width: 100%;
+  outline: none;
+  line-height: 1.2;
+  padding: 0;
+}
+
+.amount-hero-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* Quick Add & Action Chips */
+.quick-chip-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.chip-sm {
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius-chip, 9999px);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms) ease;
+  user-select: none;
+}
+
+.chip-sm:hover {
+  background-color: var(--bg-active);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.chip-sm.active {
+  background-color: var(--primary-500);
+  border-color: var(--primary-500);
+  color: var(--text-inverse);
+  font-weight: 600;
+}
+
+.chip-clear {
+  color: var(--expense-primary);
+  font-weight: 700;
+  min-width: 30px;
+  text-align: center;
+}
+
+.chip-clear:hover {
+  background-color: var(--expense-bg);
+  border-color: var(--expense-primary);
+}
+
+/* Inline Field Validation Errors & Text Helpers */
+.sheet-field-error {
+  color: var(--expense-primary);
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 500;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+.sheet-desc-text {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--text-muted);
+  line-height: 1.4;
+  padding: 0 var(--space-1);
+}
+
+.btn-text-toggle {
+  background: transparent;
+  border: none;
+  color: var(--primary-500);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.btn-text-toggle:hover {
+  text-decoration: underline;
+}
+
+/* Sticky Sheet Footer (Full-width actions on mobile and desktop) */
+.sheet-sticky-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-surface);
+  padding-top: var(--space-3, 12px);
+  padding-bottom: var(--space-1, 4px);
+  border-top: 1px solid var(--border-subtle);
+  margin-top: auto;
+  z-index: 10;
+  width: 100%;
+}
+
+.sheet-sticky-footer > div {
+  width: 100%;
+  display: flex;
+}
+
+.sheet-sticky-footer button.btn-save-tx,
+.sheet-sticky-footer button#btn-submit-debt,
+.sheet-sticky-footer .btn-v2.w-full,
+.sheet-sticky-footer .btn-v2.flex-1 {
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+.flex-1 {
+  flex: 1 1 0%;
+}
+
+/* Dynamic Save Button Types */
+.btn-save-income {
+  background-color: var(--income-primary) !important;
+  border-color: var(--income-primary) !important;
+  color: var(--text-inverse) !important;
+}
+.btn-save-income:hover { filter: brightness(0.9); }
+
+.btn-save-transfer {
+  background-color: var(--transfer-primary) !important;
+  border-color: var(--transfer-primary) !important;
+  color: var(--text-inverse) !important;
+}
+.btn-save-transfer:hover { filter: brightness(0.9); }
+
+/* Debt Selection List Rows */
+.debt-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.debt-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 8px);
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms) ease;
+  width: 100%;
+  text-align: left;
+}
+
+.debt-picker-row:hover {
+  background-color: var(--bg-subtle);
+  border-color: var(--border-strong);
+}
+
+.debt-picker-row.active {
+  border-color: var(--primary-500);
+  background-color: var(--primary-50);
+}

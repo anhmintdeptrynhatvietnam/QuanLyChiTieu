@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.10';
+const CACHE_NAME = 'qlct-pwa-v2.12';
 const CDN_CACHE = 'qlct-cdn-v1';
 
 const CDN_HOSTS = new Set([
@@ -23,6 +23,7 @@ const ASSETS_TO_CACHE = [
   './css/components.css',
   './css/layouts.css',
   './css/ui.css',
+  './css/sheets.css',
   './js/app.js',
   './js/config.js',
   './js/state.js',
@@ -33,6 +34,7 @@ const ASSETS_TO_CACHE = [
   './js/domain/legacy-migration.js',
   './js/domain/account-switch.js',
   './js/domain/export-sanitize.js',
+  './js/domain/transaction-entry.js',
   './js/components/dashboard.js',
   './js/components/transaction-list.js',
   './js/components/wallets.js',
@@ -40,7 +42,6 @@ const ASSETS_TO_CACHE = [
   './js/components/budgets.js',
   './js/components/analytics.js',
   './js/components/settings.js',
-  './js/components/transaction-modal.js',
   './js/components/confirm-dialog.js',
   './js/components/toast.js',
   './js/services/storage.js',
@@ -63,6 +64,16 @@ const ASSETS_TO_CACHE = [
   './js/ui/theme.js',
   './js/ui/wallet-picker.js',
   './js/views/more/more-view.js',
+  './js/views/transaction-sheet/last-entry.js',
+  './js/views/transaction-sheet/category-create.js',
+  './js/views/transaction-sheet/transaction-form-template.js',
+  './js/views/transaction-sheet/transaction-save.js',
+  './js/views/transaction-sheet/transaction-form.js',
+  './js/views/transaction-sheet/transaction-sheet.js',
+  './js/views/debt-sheet/debt-form-template.js',
+  './js/views/debt-sheet/debt-picker.js',
+  './js/views/debt-sheet/debt-form.js',
+  './js/views/debt-sheet/debt-sheet.js',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
   './assets/icons/apple-touch-icon.png',

@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Ghi giao dịch nhanh (bottom sheet)"
-status: pending
+status: completed
 dependencies: [1, 2]
 ---
 
@@ -19,8 +19,10 @@ dependencies: [1, 2]
 - Validate số tiền > 0; chuyển tiền cần 2 ví khác nhau; `updateTransaction` từ chối số tiền sai; tạo hạng mục mới ngay trong sheet (nút "+" trong lưới).
 
 ## Files
-- Create: `js/views/transaction-sheet/*.js` (form, lưu, nhớ lựa chọn), `js/views/debt-sheet/*.js`. Delete: `js/components/transaction-modal.js` (sau khi mọi lời gọi đã chuyển). `sw.js`.
+- Create: `js/domain/transaction-entry.js`, `js/views/transaction-sheet/*.js`, `js/views/debt-sheet/*.js`, `css/sheets.css`, `tests/transaction-entry.test.mjs`.
+- Modify: `index.html`, `js/app.js`, `sw.js`.
+- Delete: `js/components/transaction-modal.js` (unreferenced, removed from `sw.js`, deleted via git).
 
 ## Success Criteria
-- [ ] Ghi khoản chi 50k Ăn uống từ Tiền mặt: [+] → 50k → Ăn uống → Lưu.
-- [ ] Sửa/xoá giao dịch, chuyển ví, vay/trả nợ đều chạy và số dư ví đúng.
+- [x] Ghi khoản chi 50k Ăn uống từ Tiền mặt: [+] → 50k → Ăn uống → Lưu.
+- [x] Sửa/xoá giao dịch, chuyển ví, vay/trả nợ đều chạy và số dư ví đúng.

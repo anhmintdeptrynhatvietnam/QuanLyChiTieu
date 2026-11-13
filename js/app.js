@@ -1,5 +1,5 @@
 /**
- * Main Application Bootstrap & Orchestrator (Phase 02)
+ * Main Application Bootstrap & Orchestrator (Phase 03)
  */
 import { stateStore } from './state.js';
 import { Dashboard } from './components/dashboard.js';
@@ -9,7 +9,6 @@ import { Debts } from './components/debts.js';
 import { Budgets } from './components/budgets.js';
 import { Analytics } from './components/analytics.js';
 import { Settings } from './components/settings.js';
-import { TransactionModal } from './components/transaction-modal.js';
 import { ExportImportService } from './services/export-import.js';
 import { confirmDialog } from './components/confirm-dialog.js';
 import { showToast } from './components/toast.js';
@@ -17,6 +16,7 @@ import { initTheme, getThemePreference, setThemePreference } from './ui/theme.js
 import { initRouter, navigate, currentView } from './ui/router.js';
 import { setupSyncStatusSubscriber } from './ui/sync-badge.js';
 import { MoreView } from './views/more/more-view.js';
+import { openTransactionSheet } from './views/transaction-sheet/transaction-sheet.js';
 
 class App {
   constructor() {
@@ -57,7 +57,10 @@ class App {
   }
 
   initComponents() {
-    window.transactionModal = new TransactionModal();
+    // Backwards-compatibility shim for other views calling window.transactionModal.open(id)
+    window.transactionModal = {
+      open: (id) => openTransactionSheet({ txId: id || null })
+    };
     this.modal = window.transactionModal;
 
     this.dashboard = new Dashboard('view-dashboard');
@@ -138,11 +141,7 @@ class App {
   }
 
   setupActionButtons() {
-    const handleAdd = () => {
-      if (this.modal && typeof this.modal.open === 'function') {
-        this.modal.open();
-      }
-    };
+    const handleAdd = () => openTransactionSheet();
     const addBtnHeader = document.getElementById('btn-add-transaction-header');
     const fabBtn = document.getElementById('btn-fab-add');
 
