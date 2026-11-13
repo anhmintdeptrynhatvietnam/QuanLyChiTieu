@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.13';
+const CACHE_NAME = 'qlct-pwa-v2.14';
 const CDN_CACHE = 'qlct-cdn-v1';
 
 const CDN_HOSTS = new Set([
@@ -33,11 +33,11 @@ const ASSETS_TO_CACHE = [
   './css/views/dashboard.css',
   './css/views/debts.css',
   './css/views/settings.css',
+  './css/views/transactions.css',
   './css/views/wallets.css',
   './js/app.js',
   './js/components/confirm-dialog.js',
   './js/components/toast.js',
-  './js/components/transaction-list.js',
   './js/config.js',
   './js/domain/account-switch.js',
   './js/domain/analytics-series.js',
@@ -50,6 +50,7 @@ const ASSETS_TO_CACHE = [
   './js/domain/settings-migration.js',
   './js/domain/sync-diff.js',
   './js/domain/transaction-entry.js',
+  './js/domain/transaction-query.js',
   './js/services/cloud-session.js',
   './js/services/export-import.js',
   './js/services/firebase-auth.js',
@@ -99,6 +100,10 @@ const ASSETS_TO_CACHE = [
   './js/views/transaction-sheet/transaction-form.js',
   './js/views/transaction-sheet/transaction-save.js',
   './js/views/transaction-sheet/transaction-sheet.js',
+  './js/views/transactions/transactions-filter-sheet.js',
+  './js/views/transactions/transactions-header.js',
+  './js/views/transactions/transactions-list-renderer.js',
+  './js/views/transactions/transactions-view.js',
   './js/views/wallets/wallet-sheet.js',
   './js/views/wallets/wallets-view.js'
 ];

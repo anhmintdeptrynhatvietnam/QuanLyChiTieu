@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "Danh sách giao dịch"
-status: pending
+status: completed
 dependencies: [3]
 ---
 

@@ -3,7 +3,7 @@
  */
 import { stateStore } from './state.js';
 import { DashboardView } from './views/dashboard/dashboard-view.js';
-import { TransactionList } from './components/transaction-list.js';
+import { TransactionsView } from './views/transactions/transactions-view.js';
 import { WalletsView } from './views/wallets/wallets-view.js';
 import { DebtsView } from './views/debts/debts-view.js';
 import { BudgetsView } from './views/budgets/budgets-view.js';
@@ -64,7 +64,7 @@ class App {
     this.modal = window.transactionModal;
 
     this.dashboard = new DashboardView('view-dashboard');
-    this.txList = new TransactionList('view-transactions');
+    this.txList = new TransactionsView('view-transactions');
     this.wallets = new WalletsView('view-wallets');
     this.debts = new DebtsView('view-debts');
     this.budgets = new BudgetsView('view-budgets');
