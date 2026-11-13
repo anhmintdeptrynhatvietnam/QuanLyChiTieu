@@ -31,10 +31,10 @@ Sửa các lỗi mất dữ liệu/lệch sổ tiền, bỏ Google Sheets, chuy�
 | 03 | [Toàn vẹn sổ tiền](phase-03-ledger-integrity.md) | completed | 01 | 0.5d | agy medium |
 | 04 | [Firestore 1 doc/bản ghi + sync engine mới + rules](phase-04-firestore-per-record-sync.md) | completed | 01, 02 | 1.5d | agy high + Claude review rules |
 | 05 | [Migration cloud cũ + đổi tài khoản](phase-05-cloud-migration-and-account-switch.md) | completed | 04 | 1d | Claude trực tiếp (thao tác dữ liệu) |
-| 06 | [Offline/PWA](phase-06-offline-pwa.md) | pending | 04 | 0.5d | agy medium |
-| 07 | [Bảo mật & riêng tư](phase-07-security-hardening.md) | pending | 02 | 0.5d | agy medium |
-| 08 | [Tách module < 200 dòng](phase-08-modularization.md) | pending | 03, 05, 06, 07 | 2d | agy high |
-| 09 | [Đồng bộ tài liệu](phase-09-docs-alignment.md) | pending | 08 | 0.5d | agy medium |
+| 06 | [Offline/PWA](phase-06-offline-pwa.md) | completed | 04 | 0.5d | agy medium |
+| 07 | [Bảo mật & riêng tư](phase-07-security-hardening.md) | completed | 02 | 0.5d | agy medium |
+| 08 | [Tách module < 200 dòng](phase-08-modularization.md) | deferred → gộp vào đợt làm lại giao diện | 03, 05, 06, 07 | 2d | agy high |
+| 09 | [Đồng bộ tài liệu](phase-09-docs-alignment.md) | completed | 08 | 0.5d | agy medium |
 
 Thứ tự chạy: 01 → (02 ∥ 03) → 04 → 05 → (06 ∥ 07) → 08 → 09. Các cặp ∥ không đụng chung file nhưng vẫn làm tuần tự trong cùng checkout cho an toàn.
 

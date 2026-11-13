@@ -54,17 +54,16 @@ and `docs/code-standards.md` — read them before non-trivial changes.
 
 ### Running / Commands
 
-- No build. Open `index.html` directly in a browser, or serve it with VS
-  Code's Live Server extension (or any static server) for the best experience.
+- No build. Open via any static server (VS Code Live Server, or `python -m http.server 5500`); ES modules do not work from `file://`.
 - Regenerate PWA PNG icons: `node scripts/generate-icons.js` (writes into
   `assets/icons/`).
-- Run tests: `node --test "tests/*.test.mjs"` (quote the glob; a bare `tests/` dir is not discovered on Node 24; zero dependencies, `node:test` + `node:assert/strict`, files `tests/*.test.mjs`). Tests cover pure modules in `js/domain/` and `js/utils/formatters.js`; there is no lint/typecheck config — do not invent one.
+- Run tests: `node --test "tests/*.test.mjs"` (quote the glob; Node 24 does not discover a bare `tests/` dir). Zero dependencies (`node:test`, `node:assert/strict`). No lint/typecheck config.
 
 ### Architecture
 
 - Entry point `index.html` loads `js/app.js` as the single module script.
-  External libs (Chart.js, Lucide icons, Google Identity Services) load via
-  CDN `<script>` tags, not npm.
+  External libs (Chart.js 4.6.1, Lucide 1.72.0) load via CDN `<script>` tags,
+  not npm. Firebase SDK 10.13.0 loaded lazily (`js/services/firebase-sdk.js`).
 - `js/app.js`: `App` class orchestrates view routing (`data-view` attributes),
   theme (light/dark via `data-theme`), modal wiring, and service worker
   registration. It instantiates one component per view from `js/components/`.
@@ -73,26 +72,50 @@ and `docs/code-standards.md` — read them before non-trivial changes.
   `settings`. Every mutating method calls `notify()`, which persists the
   whole state to `localStorage` (via `js/services/storage.js`, keys in
   `js/config.js` `STORAGE_KEYS`, prefixed `qlct_*`) and re-runs all
-  subscribers.
-- Wallet `currentBalance` is never mutated directly — `recalculateWalletBalances()`
-  derives every wallet's balance from scratch on each change by replaying all
-  transactions and debts/repayments. Any new feature that moves money must be
-  added to this recalculation, not to ad-hoc balance updates.
-- Google Sync is two independent services under `js/services/`:
-  `google-auth.js` (GIS OAuth2 token client; persists access token + expiry in
-  `localStorage` under `quanlythuchi_google_access_token` /
-  `..._token_expires_at`, separate from the `qlct_*` state keys) and
-  `google-sheets.js` (Sheets API v4 find-or-create + push/pull against a
-  spreadsheet named `QuanLyChiTieu_DB` with 6 tabs: Transactions, Wallets,
-  Categories, Budgets, Debts, Settings). The Google OAuth Client ID is
-  user-supplied at runtime (Settings view) and stored in
-  `state.settings.googleClientId` — never hardcode one.
-- `sw.js` precaches an explicit `ASSETS_TO_CACHE` file list for offline PWA
-  use. Adding a new JS/CSS file requires adding its path to that list and
-  bumping `CACHE_NAME`, or the file won't be available offline / stale copies
-  won't invalidate.
+  subscribers. The app itself does not use IndexedDB; only the Firebase SDK
+  uses IndexedDB internally for auth/cache.
+- Wallet `currentBalance` is never mutated directly — `computeWalletBalances()`
+  in `js/domain/ledger.js` derives every wallet's balance from scratch on each
+  change by replaying all transactions and debts/repayments.
+- Pure domain modules in `js/domain/`: zero external imports, no DOM/storage/Firebase
+  dependencies, unit-tested via `node --test "tests/*.test.mjs"`. Includes
+  `js/domain/ledger.js` (wallet balances derived by replaying transactions + debts),
+  `debt-rules.js` (repayment rules), `sync-diff.js` (record hashing, push diff, 3-way merge, sort order),
+  `legacy-migration.js` (array-to-record mapping, deduplication),
+  `account-switch.js` (sign-in data decisions), and `settings-migration.js`.
+- Cloud Sync (Firebase only, Google Sheets removed):
+  - Firebase SDK 10.13.0 loaded lazily via `js/services/firebase-sdk.js`.
+    Default project `sothuchi-5f58e` (`js/config.js` `DEFAULT_FIREBASE_CONFIG`);
+    users can enter their own Firebase config in Settings.
+  - Sign-in: Google (popup) or Anonymous (must be enabled in Firebase Console →
+    Authentication → Sign-in method; app shows a Vietnamese error if not).
+  - Firestore layout: `users/{uid}/{transactions|wallets|categories|budgets|debts}/{id}`
+    (one document per record) + `users/{uid}/settings/main`; schema marker
+    `users/{uid}/meta/schema` `{ version: 2 }`.
+  - Legacy layout `users/{uid}/data/{table}` (`{ items: [...] }`) is migrated
+    on first sign-in after a confirm dialog and an automatic JSON backup;
+    legacy docs are kept, never deleted (`js/services/firebase-migration.js`, `js/services/cloud-session.js`).
+  - Sync engine `js/services/firebase-sync.js`: realtime listeners per collection,
+    per-record baseline hashes in localStorage `qlct_sync_baseline_{uid}`, pushes
+    held until initial snapshots arrive, batched writes ≤450 ops.
+  - Sign-in flow: different account than last time → local data replaced;
+    first sign-in with data on both sides → user chooses "Dùng dữ liệu Cloud" /
+    "Ghi đè Cloud" / "Gộp cả hai" (default). Settings has "Đẩy toàn bộ lên Cloud" /
+    "Kéo toàn bộ về máy" when signed in. Known limitation: importing a JSON
+    backup while signed in makes the cloud match the file (cloud records missing
+    from the file are deleted).
+  - Security rules: `firestore.rules` in repo (each user can only read/write
+    `users/{uid}/**`). Deploy: Firebase Console → Firestore Database → Rules
+    (paste + Publish) or `firebase deploy --only firestore:rules --project sothuchi-5f58e`
+    (needs a `firebase.json` with `{"firestore":{"rules":"firestore.rules"}}`, not in repo).
+- `sw.js` precaches an explicit `ASSETS_TO_CACHE` file list for offline PWA use;
+  `tests/sw-assets.test.mjs` fails if a file under `js/`, `css/`, `assets/icons/`
+  is missing from it. Bump `CACHE_NAME` on every release. CDN libs pinned:
+  lucide 1.72.0, chart.js 4.6.1 (cached at runtime in `qlct-cdn-v1`).
+  Offline works only after one online visit (browser limitation).
 - Conventions (from `docs/code-standards.md`): kebab-case filenames, keep
-  files under ~200 lines (split into `components/`/`services/`/`utils/` when
-  they grow), currency formatted as Vietnamese `###.###.### ₫`, dates as
-  `DD/MM/YYYY`, and `try...catch` around every storage read/write and Google
-  API call.
+  files under ~200 lines (several files are larger today and will be split
+  during the upcoming UI redesign as a known exception), currency displayed
+  as Vietnamese `###.###.### ₫`, dates stored `YYYY-MM-DD` and displayed
+  `DD/MM/YYYY`, dynamic HTML escaped via `escapeHtml()`, and `try...catch`
+  around storage and Firebase operations.

@@ -1,7 +1,7 @@
 ---
 phase: 9
 title: "Đồng bộ tài liệu"
-status: pending
+status: completed
 priority: P3
 effort: "0.5d"
 dependencies: [8]
@@ -30,8 +30,8 @@ Cập nhật tài liệu cho khớp hiện trạng sau refactor: Firebase là cl
 3. Kiểm tra mọi link tương đối và lệnh trong docs chạy được.
 
 ## Success Criteria
-- [ ] `grep -rniE "google sheets|indexeddb|client id" README.md docs CLAUDE.md` chỉ còn các câu đúng (vd: Firestore cache dùng IndexedDB).
-- [ ] Lệnh trong README/CLAUDE.md chạy được.
+- [x] `grep -rniE "google sheets|indexeddb|client id" README.md docs CLAUDE.md` chỉ còn các câu đúng (vd: Firestore cache dùng IndexedDB).
+- [x] Lệnh trong README/CLAUDE.md chạy được.
 
 ## Risk Assessment
 - Thấp. Signal: docs mô tả tính năng không có trong code → kiểm tra lại bằng grep trước khi viết.

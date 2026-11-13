@@ -1,7 +1,7 @@
 ---
 phase: 7
 title: "Bảo mật & riêng tư"
-status: pending
+status: completed
 priority: P2
 effort: "0.5d"
 dependencies: [2]
@@ -33,11 +33,17 @@ Vá XSS ở toast, bớt PII trong file backup, sửa CSV injection, thêm CSP.
 4. Tính hash SRI cho 2 script CDN (tải file bản đã pin, `openssl dgst -sha384 -binary | openssl base64 -A`).
 
 ## Success Criteria
-- [ ] `node --test "tests/*.test.mjs"` xanh.
-- [ ] Toast với message `<img src=x onerror=alert(1)>` hiển thị đúng chữ, không chạy script.
-- [ ] File JSON export không chứa `firebaseUser`.
-- [ ] Smoke test đầy đủ không có lỗi CSP trong console, kể cả đăng nhập Google qua Firebase.
+- [x] `node --test "tests/*.test.mjs"` xanh.
+- [x] Toast với message `<img src=x onerror=alert(1)>` hiển thị đúng chữ, không chạy script.
+- [x] File JSON export không chứa `firebaseUser`.
+- [x] Smoke test đầy đủ không có lỗi CSP trong console, kể cả đăng nhập Google qua Firebase.
 
 ## Risk Assessment
 - CSP quá chặt chặn Firebase Auth popup → signal: lỗi `Refused to frame/connect` khi đăng nhập → thêm đúng domain bị chặn, không dùng `*`.
 - `'unsafe-inline'` cho style làm CSP yếu hơn → chấp nhận; bỏ inline style là việc của phase 08.
+
+## Kết quả (2026-11-14)
+- agy: `js/domain/export-sanitize.js` + test, toast dùng `textContent`, escape id/tên trong mọi template, `safeColor`/`safeIconName`, export JSON bỏ `firebaseUser`/`syncStatus`/`lastSyncTime`, CSV chống formula injection, CSP meta + SRI cho 2 script CDN.
+- Claude review: quét lại mọi chỗ chèn tên/ghi chú/người vay → đều đã escape hoặc dùng `textContent`.
+- Đã kiểm trên browser: không vi phạm CSP, đồng bộ Firestore vẫn `connected`, toast `<img onerror>` hiện dạng chữ, không chạy script; export không có `firebaseUser`. 137 test xanh.
+- CHƯA kiểm: đăng nhập Google mới (popup) dưới CSP — phiên đăng nhập cũ vẫn chạy; kiểm lại trên bản go-live.

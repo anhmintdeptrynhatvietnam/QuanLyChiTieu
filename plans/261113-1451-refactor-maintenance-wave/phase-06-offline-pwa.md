@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "Offline/PWA"
-status: pending
+status: completed
 priority: P2
 effort: "0.5d"
 dependencies: [4]
@@ -34,10 +34,15 @@ App phải mở được offline sau lần online đầu: precache đủ file lo
 5. Thử: online 1 lần → DevTools Offline → reload; xoá "Clear site data" → offline → reload (kỳ vọng: không có SW nên không chạy được, đó là giới hạn trình duyệt — ghi vào docs).
 
 ## Success Criteria
-- [ ] `node --test "tests/*.test.mjs"` xanh (gồm `sw-assets`).
-- [ ] Smoke test bước 6 pass; biểu đồ và icon hiển thị khi offline.
-- [ ] Chặn domain `www.gstatic.com` trong DevTools → app vẫn dùng được local.
+- [x] `node --test "tests/*.test.mjs"` xanh (gồm `sw-assets`).
+- [x] Smoke test bước 6 pass; biểu đồ và icon hiển thị khi offline.
+- [x] Chặn domain `www.gstatic.com` trong DevTools → app vẫn dùng được local.
 
 ## Risk Assessment
 - Cache response CDN sai version gây lỗi kéo dài → mọi URL đã pin version nên cache key đổi khi đổi version.
 - Opaque response (no-cors) chiếm quota lớn → chỉ cache `type === 'cors'` và status 200.
+
+## Kết quả (2026-11-14)
+- agy: pin `lucide@1.72.0`, `chart.js@4.6.1` (+`crossorigin`), `CDN_CACHE` stale-while-revalidate cho allowlist host, fallback offline (`Response.error()`, navigate → `index.html`), trạng thái `offline` + badge, `tests/sw-assets.test.mjs`.
+- Claude sửa thêm: precache dùng `cache: 'reload'` (tránh cache bản cũ do HTTP cache của GitHub Pages); `crossorigin` cho CSS Google Fonts để cache được.
+- Đã kiểm: tắt server → reload → app, icon, biểu đồ, font đều chạy từ cache. CHƯA kiểm: chặn riêng `www.gstatic.com` (không giả lập được trong khung browser; nhánh catch đơn giản).

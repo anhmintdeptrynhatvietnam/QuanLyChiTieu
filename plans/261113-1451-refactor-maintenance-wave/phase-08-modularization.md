@@ -1,7 +1,7 @@
 ---
 phase: 8
 title: "Tách module < 200 dòng"
-status: pending
+status: deferred
 priority: P3
 effort: "2d"
 dependencies: [3, 5, 6, 7]
@@ -49,3 +49,6 @@ Tách theo ranh giới hiện có (`components/`, `services/`, `utils/`, `domain
 ## Risk Assessment
 - Rủi ro regression cao nhất (event binding DOM, không có test UI). Giảm thiểu: commit nhỏ, smoke test từng commit, không đổi markup/ID trừ khi cần.
 - Signal kế hoạch sai: một file sau khi tách vẫn > 200 dòng vì là template HTML dài → cho phép tách template ra hàm render riêng; nếu vẫn không được, ghi ngoại lệ thay vì tách gượng ép.
+
+## Quyết định (2026-11-14)
+Chủ dự án chọn gộp việc tách module vào đợt làm lại giao diện (bố cục + UX): component cũ sắp bị thay nên không tách riêng.
