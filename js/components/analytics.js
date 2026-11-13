@@ -4,7 +4,7 @@
 import { stateStore } from '../state.js';
 import { CATEGORY_PALETTE } from '../config.js';
 import { formatCurrency, formatMonthYearDisplay, getMonthYear } from '../utils/formatters.js';
-import { escapeHtml } from '../utils/helpers.js';
+import { escapeHtml, safeColor } from '../utils/helpers.js';
 
 export class Analytics {
   constructor(containerId = 'view-analytics') {
@@ -64,7 +64,7 @@ export class Analytics {
           </div>
 
           <div class="flex items-center gap-2">
-            <input type="month" id="analytics-month-picker" class="form-input" value="${this.selectedMonth}" style="width: auto;">
+            <input type="month" id="analytics-month-picker" class="form-input" value="${escapeHtml(this.selectedMonth)}" style="width: auto;">
           </div>
         </div>
 
@@ -128,7 +128,7 @@ export class Analytics {
         <tr style="border-bottom: 1px solid var(--border-subtle);">
           <td style="padding: 10px 8px; font-weight: 500;">
             <div class="flex items-center gap-2">
-              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${cat?.color || '#3b82f6'};"></span>
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${safeColor(cat?.color || '#3b82f6')};"></span>
               ${escapeHtml(cat?.name || 'Khác')}
             </div>
           </td>

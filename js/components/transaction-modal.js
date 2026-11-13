@@ -275,7 +275,7 @@ export class TransactionModal {
         debtSelect.innerHTML = '<option value="">(Không có ai đang nợ bạn)</option>';
       } else {
         debtSelect.innerHTML = lendDebts.map(d => 
-          `<option value="${d.id}" data-rem="${d.remainingAmount}">${escapeHtml(d.personName)} (Còn nợ: ${formatNumber(d.remainingAmount)} ₫)</option>`
+          `<option value="${escapeHtml(d.id)}" data-rem="${d.remainingAmount}">${escapeHtml(d.personName)} (Còn nợ: ${formatNumber(d.remainingAmount)} ₫)</option>`
         ).join('');
         if (lendDebts[0] && !amountInput.value) {
           amountInput.value = formatNumber(lendDebts[0].remainingAmount);
@@ -295,7 +295,7 @@ export class TransactionModal {
         debtSelect.innerHTML = '<option value="">(Bạn không có khoản nợ nào cần trả)</option>';
       } else {
         debtSelect.innerHTML = borrowDebts.map(d => 
-          `<option value="${d.id}" data-rem="${d.remainingAmount}">${escapeHtml(d.personName)} (Còn nợ: ${formatNumber(d.remainingAmount)} ₫)</option>`
+          `<option value="${escapeHtml(d.id)}" data-rem="${d.remainingAmount}">${escapeHtml(d.personName)} (Còn nợ: ${formatNumber(d.remainingAmount)} ₫)</option>`
         ).join('');
         if (borrowDebts[0] && !amountInput.value) {
           amountInput.value = formatNumber(borrowDebts[0].remainingAmount);
@@ -323,7 +323,7 @@ export class TransactionModal {
       if (isCredit) {
         balText = w.currentBalance < 0 ? `Thẻ TD - Nợ ${formatNumber(Math.abs(w.currentBalance))} ₫` : `Thẻ TD - ${formatNumber(w.currentBalance)} ₫`;
       }
-      return `<option value="${w.id}">${escapeHtml(w.name)} (${balText})</option>`;
+      return `<option value="${escapeHtml(w.id)}">${escapeHtml(w.name)} (${balText})</option>`;
     }).join('');
     walletSelect.innerHTML = walletOptions;
     toWalletSelect.innerHTML = walletOptions;
@@ -353,7 +353,7 @@ export class TransactionModal {
       // Filter categories by type
       const filteredCategories = state.categories.filter(c => c.type === this.activeType);
       catSelect.innerHTML = filteredCategories.map(c => 
-        `<option value="${c.id}">${escapeHtml(c.name)}</option>`
+        `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`
       ).join('');
     }
 

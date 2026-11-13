@@ -10,6 +10,7 @@ import { firebaseSyncService } from './services/firebase-sync.js';
 import { computeWalletBalances, findWalletReferences } from './domain/ledger.js';
 import { applyRepayment, canRepay } from './domain/debt-rules.js';
 import { sanitizeLegacySettings } from './domain/settings-migration.js';
+import { sanitizeImportedSettings } from './domain/export-sanitize.js';
 import { SYNCED_SETTINGS_KEYS } from './domain/sync-diff.js';
 import { prepareCloudSession } from './services/cloud-session.js';
 
@@ -76,6 +77,7 @@ class StateStore {
       });
     } catch (err) {
       console.warn('Khởi tạo Firebase thất bại:', err);
+      firebaseSyncService.updateStatus('offline', 'Offline / chưa tải được Cloud');
     }
   }
 
@@ -472,7 +474,7 @@ class StateStore {
         return true;
       });
     }
-    if (payload.settings) this.state.settings = { ...this.state.settings, ...sanitizeLegacySettings(payload.settings) };
+    if (payload.settings) this.state.settings = { ...this.state.settings, ...sanitizeLegacySettings(sanitizeImportedSettings(payload.settings)) };
 
     this.recalculateWalletBalances();
     this.notify('data:imported', this.state);

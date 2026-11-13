@@ -3,7 +3,7 @@
  */
 import { stateStore } from '../state.js';
 import { formatCurrency, formatNumber, parseFormattedNumber } from '../utils/formatters.js';
-import { escapeHtml } from '../utils/helpers.js';
+import { escapeHtml, safeColor } from '../utils/helpers.js';
 import { attachModalA11y } from '../utils/modal-a11y.js';
 import { isAmountVisible, renderEyeButton, attachPrivacyListeners } from '../utils/privacy.js';
 import { confirmDialog } from './confirm-dialog.js';
@@ -140,17 +140,17 @@ export class Wallets {
     }
 
     return `
-      <div class="card" style="border-top: 4px solid ${wallet.color || 'var(--primary-500)'};">
+      <div class="card" style="border-top: 4px solid ${safeColor(wallet.color)};">
         <div class="flex items-center justify-between" style="margin-bottom: var(--space-3);">
           <div class="flex items-center gap-2">
             <div class="badge badge-subtle font-medium">${typeLabel}</div>
             ${isCredit ? '<span class="badge badge-subtle" style="font-size: 10px; color: var(--text-muted);">Không tính tài sản</span>' : ''}
           </div>
           <div class="flex items-center gap-2">
-            <button type="button" class="btn btn-icon btn-edit-wallet" data-id="${wallet.id}" title="Sửa" aria-label="Sửa ví ${escapeHtml(wallet.name)}">
+            <button type="button" class="btn btn-icon btn-edit-wallet" data-id="${escapeHtml(wallet.id)}" title="Sửa" aria-label="Sửa ví ${escapeHtml(wallet.name)}">
               <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
             </button>
-            <button type="button" class="btn btn-icon btn-delete-wallet" data-id="${wallet.id}" title="Xóa" aria-label="Xóa ví ${escapeHtml(wallet.name)}" style="color: var(--expense-primary);">
+            <button type="button" class="btn btn-icon btn-delete-wallet" data-id="${escapeHtml(wallet.id)}" title="Xóa" aria-label="Xóa ví ${escapeHtml(wallet.name)}" style="color: var(--expense-primary);">
               <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
             </button>
           </div>

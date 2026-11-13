@@ -3,7 +3,7 @@
  */
 import { stateStore } from '../state.js';
 import { formatCurrency, formatNumber, parseFormattedNumber, getMonthYear, formatMonthYearDisplay } from '../utils/formatters.js';
-import { escapeHtml } from '../utils/helpers.js';
+import { escapeHtml, safeColor, safeIconName } from '../utils/helpers.js';
 import { attachModalA11y } from '../utils/modal-a11y.js';
 import { confirmDialog } from './confirm-dialog.js';
 
@@ -108,7 +108,7 @@ export class Budgets {
           </div>
 
           <div class="flex items-center gap-2">
-            <input type="month" id="budget-view-month" class="form-input" value="${this.selectedMonth}" style="width: auto;">
+            <input type="month" id="budget-view-month" class="form-input" value="${escapeHtml(this.selectedMonth)}" style="width: auto;">
           </div>
         </div>
 
@@ -145,7 +145,7 @@ export class Budgets {
         <div class="flex items-center justify-between" style="margin-bottom: var(--space-2);">
           <div class="flex items-center gap-3">
             <div class="icon-avatar" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-subtle);">
-              <i data-lucide="${category.icon || 'tag'}" style="width: 18px; height: 18px; color: ${category.color};"></i>
+              <i data-lucide="${safeIconName(category.icon || 'tag')}" style="width: 18px; height: 18px; color: ${safeColor(category.color)};"></i>
             </div>
             <div>
               <h4 style="font-size: var(--font-size-base); font-weight: 600;">${escapeHtml(category.name)}</h4>
@@ -157,7 +157,7 @@ export class Budgets {
             <span class="badge ${isOver ? 'badge-expense' : 'badge-subtle'} font-bold" style="color: ${statusColor};">
               ${statusText}
             </span>
-            <button type="button" class="btn btn-secondary btn-set-budget" data-cat-id="${category.id}" style="padding: 4px 10px; font-size: var(--font-size-xs);">
+            <button type="button" class="btn btn-secondary btn-set-budget" data-cat-id="${escapeHtml(category.id)}" style="padding: 4px 10px; font-size: var(--font-size-xs);">
               ${hasBudget ? 'Sửa' : '+ Đặt mức'}
             </button>
           </div>

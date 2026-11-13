@@ -3,7 +3,17 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.6';
+const CACHE_NAME = 'qlct-pwa-v2.8';
+const CDN_CACHE = 'qlct-cdn-v1';
+
+const CDN_HOSTS = new Set([
+  'unpkg.com',
+  'cdn.jsdelivr.net',
+  'www.gstatic.com',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com'
+]);
+
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -21,6 +31,7 @@ const ASSETS_TO_CACHE = [
   './js/domain/sync-diff.js',
   './js/domain/legacy-migration.js',
   './js/domain/account-switch.js',
+  './js/domain/export-sanitize.js',
   './js/components/dashboard.js',
   './js/components/transaction-list.js',
   './js/components/wallets.js',
@@ -52,7 +63,8 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
+      // Bypass the HTTP cache so a new release never precaches stale files.
+      return cache.addAll(ASSETS_TO_CACHE.map((url) => new Request(url, { cache: 'reload' }))).catch((err) => {
         console.warn('Some assets could not be pre-cached:', err);
       });
     }).then(() => self.skipWaiting())
@@ -64,41 +76,88 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys
+          .filter((key) => key !== CACHE_NAME && key !== CDN_CACHE)
+          .map((key) => caches.delete(key))
       );
     }).then(() => self.clients.claim())
   );
 });
 
-// Fetch Event - Stale-while-revalidate / Network-first strategy
+// Fetch Event - Caching strategies
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Ignore Firebase / Google APIs requests (always live network)
-  const url = event.request.url;
-  if (url.includes('googleapis.com') || url.includes('accounts.google.com')) {
+  const url = new URL(event.request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+
+  if (isSameOrigin) {
+    // Same-origin GET: cache-first + background refresh
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+              const responseToCache = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            }
+            return networkResponse;
+          })
+          .catch(async () => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            if (event.request.mode === 'navigate') {
+              const indexResponse = await caches.match('./index.html');
+              if (indexResponse) {
+                return indexResponse;
+              }
+            }
+            return Response.error();
+          });
+
+        if (cachedResponse) {
+          event.waitUntil(fetchPromise.catch(() => {}));
+          return cachedResponse;
+        }
+
+        return fetchPromise;
+      })
+    );
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
+  // Cross-origin GET whose host is in an allowlist: stale-while-revalidate into CDN_CACHE
+  if (CDN_HOSTS.has(url.hostname)) {
+    event.respondWith(
+      caches.open(CDN_CACHE).then(async (cache) => {
+        const cachedResponse = await cache.match(event.request);
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            if (
+              networkResponse &&
+              networkResponse.status === 200 &&
+              (networkResponse.type === 'cors' || networkResponse.type === 'basic')
+            ) {
+              const responseToCache = networkResponse.clone();
               cache.put(event.request, responseToCache);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          // Fallback if offline
-          return cachedResponse;
-        });
+            }
+            return networkResponse;
+          });
 
-      return cachedResponse || fetchPromise;
-    })
-  );
+        if (cachedResponse) {
+          event.waitUntil(fetchPromise.catch(() => {}));
+          return cachedResponse;
+        }
+
+        return fetchPromise.catch(() => Response.error());
+      })
+    );
+    return;
+  }
+
+  // Any other cross-origin request: pass through without respondWith
 });

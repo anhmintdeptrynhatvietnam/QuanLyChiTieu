@@ -264,10 +264,10 @@ export class Debts {
               ${statusBadge}
             </div>
             <div class="flex items-center gap-1">
-              <button type="button" class="btn btn-icon btn-edit-debt" data-id="${debt.id}" title="Sửa" aria-label="Sửa khoản nợ">
+              <button type="button" class="btn btn-icon btn-edit-debt" data-id="${escapeHtml(debt.id)}" title="Sửa" aria-label="Sửa khoản nợ">
                 <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
               </button>
-              <button type="button" class="btn btn-icon btn-delete-debt" data-id="${debt.id}" title="Xóa" aria-label="Xóa khoản nợ" style="color: var(--expense-primary);">
+              <button type="button" class="btn btn-icon btn-delete-debt" data-id="${escapeHtml(debt.id)}" title="Xóa" aria-label="Xóa khoản nợ" style="color: var(--expense-primary);">
                 <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
               </button>
             </div>
@@ -322,7 +322,7 @@ export class Debts {
         <!-- Action Button -->
         <div style="margin-top: var(--space-4); border-top: 1px solid var(--border-subtle); padding-top: var(--space-3);">
           ${!isPaid ? `
-            <button type="button" class="btn ${isLend ? 'btn-primary' : 'btn-secondary'} w-full btn-open-repay" data-id="${debt.id}" style="justify-content: center;">
+            <button type="button" class="btn ${isLend ? 'btn-primary' : 'btn-secondary'} w-full btn-open-repay" data-id="${escapeHtml(debt.id)}" style="justify-content: center;">
               <i data-lucide="${isLend ? 'download' : 'upload'}" style="width: 14px; height: 14px;"></i>
               <span>${isLend ? 'Thu Nợ Đợt Này' : 'Trả Nợ Đợt Này'}</span>
             </button>
@@ -440,7 +440,7 @@ export class Debts {
       const bal = isCredit && w.currentBalance < 0 
         ? `Nợ ${formatNumber(Math.abs(w.currentBalance))} ₫` 
         : `${formatNumber(w.currentBalance)} ₫`;
-      return `<option value="${w.id}" ${w.id === selectedWalletId ? 'selected' : ''}>${escapeHtml(w.name)} (${bal})</option>`;
+      return `<option value="${escapeHtml(w.id)}" ${w.id === selectedWalletId ? 'selected' : ''}>${escapeHtml(w.name)} (${bal})</option>`;
     }).join('');
   }
 

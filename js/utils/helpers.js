@@ -91,3 +91,18 @@ export function getCurrentDateFormatted() {
   const day = String(now.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+export function safeColor(value) {
+  if (typeof value === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(value)) {
+    return value;
+  }
+  return '#64748b';
+}
+
+export function safeIconName(value) {
+  if (typeof value === 'string' && /^[a-z0-9-]+$/.test(value)) {
+    return value;
+  }
+  return 'circle';
+}
+

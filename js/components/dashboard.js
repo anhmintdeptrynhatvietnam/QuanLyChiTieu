@@ -3,7 +3,7 @@
  */
 import { stateStore } from '../state.js';
 import { formatCurrency, formatRelativeDate, getMonthYear } from '../utils/formatters.js';
-import { escapeHtml } from '../utils/helpers.js';
+import { escapeHtml, safeColor, safeIconName } from '../utils/helpers.js';
 import { isAmountVisible, renderEyeButton, attachPrivacyListeners } from '../utils/privacy.js';
 
 export class Dashboard {
@@ -193,7 +193,7 @@ export class Dashboard {
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <div class="icon-avatar" style="width: 34px; height: 34px;">
-            <i data-lucide="${cat?.icon || (isTransfer ? 'arrow-right-left' : 'shopping-bag')}" style="width: 16px; height: 16px; color: ${cat?.color || 'inherit'};"></i>
+            <i data-lucide="${safeIconName(cat?.icon || (isTransfer ? 'arrow-right-left' : 'shopping-bag'))}" style="width: 16px; height: 16px; color: ${cat?.color ? safeColor(cat.color) : 'inherit'};"></i>
           </div>
           <div>
             <div class="font-medium" style="font-size: var(--font-size-sm);">${escapeHtml(cat?.name || (isTransfer ? 'Chuyển tiền' : 'Chi tiêu'))}</div>
@@ -222,7 +222,7 @@ export class Dashboard {
             <span class="text-muted font-bold">${formatCurrency(amount)} (${percent}%)</span>
           </div>
           <div style="height: 6px; background: var(--bg-subtle); border-radius: var(--radius-full); overflow: hidden;">
-            <div style="width: ${percent}%; height: 100%; background: ${cat?.color || 'var(--primary-500)'}; border-radius: var(--radius-full);"></div>
+            <div style="width: ${percent}%; height: 100%; background: ${cat?.color ? safeColor(cat.color) : 'var(--primary-500)'}; border-radius: var(--radius-full);"></div>
           </div>
         </div>
       `;

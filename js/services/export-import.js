@@ -2,18 +2,23 @@
  * Backup & Restore Service (JSON & CSV Export / Import)
  */
 import { stateStore } from '../state.js';
+import { DEFAULT_FIREBASE_CONFIG } from '../config.js';
+import { sanitizeForExport, toCsvCell } from '../domain/export-sanitize.js';
 import { getCurrentDateFormatted } from '../utils/helpers.js';
 
 export class ExportImportService {
   static exportJSON() {
-    const state = stateStore.getState();
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(state, null, 2));
+    const state = sanitizeForExport(stateStore.getState(), DEFAULT_FIREBASE_CONFIG);
+    const jsonStr = JSON.stringify(state, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('href', url);
     downloadAnchor.setAttribute('download', `QuanLyChiTieu_Backup_${getCurrentDateFormatted()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    URL.revokeObjectURL(url);
   }
 
   static exportCSV() {
@@ -26,18 +31,19 @@ export class ExportImportService {
       const typeStr = t.type === 'income' ? 'Thu nhập' : (t.type === 'expense' ? 'Chi tiêu' : 'Chuyển tiền');
 
       return [
-        t.id,
-        t.date,
-        typeStr,
-        t.amount,
-        `"${cat?.name || ''}"`,
-        `"${wallet?.name || ''}"`,
-        `"${toWallet?.name || ''}"`,
-        `"${(t.note || '').replace(/"/g, '""')}"`
+        toCsvCell(t.id),
+        toCsvCell(t.date),
+        toCsvCell(typeStr),
+        toCsvCell(typeof t.amount === 'number' ? t.amount : (Number(t.amount) || 0)),
+        toCsvCell(cat?.name || ''),
+        toCsvCell(wallet?.name || ''),
+        toCsvCell(toWallet?.name || ''),
+        toCsvCell(t.note || '')
       ];
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+    const headerLine = headers.map(h => toCsvCell(h)).join(',');
+    const csvContent = '\uFEFF' + [headerLine, ...rows.map(r => r.join(','))].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -46,6 +52,7 @@ export class ExportImportService {
     document.body.appendChild(link);
     link.click();
     link.remove();
+    URL.revokeObjectURL(url);
   }
 
   static importJSON(file, callback) {

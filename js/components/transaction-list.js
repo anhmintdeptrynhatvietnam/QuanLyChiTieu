@@ -3,7 +3,7 @@
  */
 import { stateStore } from '../state.js';
 import { formatCurrency, formatRelativeDate } from '../utils/formatters.js';
-import { escapeHtml, getDateRange } from '../utils/helpers.js';
+import { escapeHtml, getDateRange, safeColor, safeIconName } from '../utils/helpers.js';
 import { confirmDialog } from './confirm-dialog.js';
 
 const dateFilters = [
@@ -81,7 +81,7 @@ export class TransactionList {
             <!-- Row 2: Quick Date Chips (Horizontal Scrollable) -->
             <div class="chip-group">
               ${dateFilters.map(df => `
-                <button type="button" class="chip-sm ${this.filterDate === df.id ? 'active' : ''}" data-date-filter="${df.id}">
+                <button type="button" class="chip-sm ${this.filterDate === df.id ? 'active' : ''}" data-date-filter="${escapeHtml(df.id)}">
                   ${df.label}
                 </button>
               `).join('')}
@@ -100,13 +100,13 @@ export class TransactionList {
               <!-- Wallet Filter -->
               <select id="tx-filter-wallet" class="form-select" style="flex: 1; min-width: 105px; padding: 6px 10px; font-size: var(--font-size-xs); height: 34px;">
                 <option value="all">Tất cả ví</option>
-                ${state.wallets.map(w => `<option value="${w.id}" ${this.filterWallet === w.id ? 'selected' : ''}>${escapeHtml(w.name)}</option>`).join('')}
+                ${state.wallets.map(w => `<option value="${escapeHtml(w.id)}" ${this.filterWallet === w.id ? 'selected' : ''}>${escapeHtml(w.name)}</option>`).join('')}
               </select>
 
               <!-- Category Filter -->
               <select id="tx-filter-category" class="form-select" style="flex: 1; min-width: 105px; padding: 6px 10px; font-size: var(--font-size-xs); height: 34px;">
                 <option value="all">Tất cả mục</option>
-                ${state.categories.map(c => `<option value="${c.id}" ${this.filterCategory === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+                ${state.categories.map(c => `<option value="${escapeHtml(c.id)}" ${this.filterCategory === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
               </select>
 
               ${isFiltered ? `
@@ -216,10 +216,10 @@ export class TransactionList {
     }
 
     return `
-      <div class="tx-item" data-id="${tx.id}">
-        <div class="tx-item-left btn-row-click" data-id="${tx.id}" style="cursor: pointer;">
+      <div class="tx-item" data-id="${escapeHtml(tx.id)}">
+        <div class="tx-item-left btn-row-click" data-id="${escapeHtml(tx.id)}" style="cursor: pointer;">
           <div class="icon-avatar" style="flex-shrink: 0; width: 36px; height: 36px;">
-            <i data-lucide="${iconName}" style="width: 16px; height: 16px; color: ${cat?.color || 'var(--text-secondary)'};"></i>
+            <i data-lucide="${safeIconName(iconName)}" style="width: 16px; height: 16px; color: ${safeColor(cat?.color)};"></i>
           </div>
           <div class="tx-item-content">
             <div class="tx-item-title">${escapeHtml(title)}</div>
@@ -233,10 +233,10 @@ export class TransactionList {
         <div class="tx-item-right">
           <span class="font-bold ${typeClass}" style="font-size: var(--font-size-sm);">${prefix}${formatCurrency(tx.amount)}</span>
           <div class="flex items-center gap-1" style="margin-top: 2px;">
-            <button type="button" class="btn-icon-sm btn-edit-tx" data-id="${tx.id}" title="Sửa">
+            <button type="button" class="btn-icon-sm btn-edit-tx" data-id="${escapeHtml(tx.id)}" title="Sửa">
               <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i>
             </button>
-            <button type="button" class="btn-icon-sm btn-delete-tx" data-id="${tx.id}" title="Xóa" style="color: var(--expense-primary);">
+            <button type="button" class="btn-icon-sm btn-delete-tx" data-id="${escapeHtml(tx.id)}" title="Xóa" style="color: var(--expense-primary);">
               <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
             </button>
           </div>

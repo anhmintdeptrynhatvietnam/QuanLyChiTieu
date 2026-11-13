@@ -4,7 +4,7 @@ import { firebaseAuthService } from '../services/firebase-auth.js';
 import { firebaseSyncService } from '../services/firebase-sync.js';
 import { showToast } from './toast.js';
 import { confirmDialog } from './confirm-dialog.js';
-import { escapeHtml } from '../utils/helpers.js';
+import { escapeHtml, safeColor } from '../utils/helpers.js';
 import { CATEGORY_PALETTE, DEFAULT_FIREBASE_CONFIG } from '../config.js';
 
 export class Settings {
@@ -57,7 +57,7 @@ export class Settings {
               <div class="card" style="background: var(--bg-subtle); padding: var(--space-3); border-radius: var(--radius-md);">
                 <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 12px;">
                   <div class="flex items-center gap-3">
-                    ${fbUser.photoURL ? `
+                    ${(fbUser.photoURL && typeof fbUser.photoURL === 'string' && fbUser.photoURL.startsWith('https://')) ? `
                       <img src="${escapeHtml(fbUser.photoURL)}" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-500);">
                     ` : `
                       <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-600); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700;">
@@ -169,9 +169,9 @@ export class Settings {
               <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                 ${state.categories.filter(c => c.type === 'expense').map(c => `
                   <div class="badge badge-subtle flex items-center gap-2" style="padding: 6px 10px; font-size: 13px; border: 1px solid var(--border-subtle);">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${c.color || '#f97316'}; display: inline-block;"></span>
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${safeColor(c.color || '#f97316')}; display: inline-block;"></span>
                     <span>${escapeHtml(c.name)}</span>
-                    <button type="button" class="btn-delete-cat text-muted" data-id="${c.id}" title="Xóa hạng mục" style="background: none; border: none; cursor: pointer; padding: 0; margin-left: 4px; display: flex; align-items: center; color: var(--expense-primary);">
+                    <button type="button" class="btn-delete-cat text-muted" data-id="${escapeHtml(c.id)}" title="Xóa hạng mục" style="background: none; border: none; cursor: pointer; padding: 0; margin-left: 4px; display: flex; align-items: center; color: var(--expense-primary);">
                       <i data-lucide="x" style="width: 12px; height: 12px;"></i>
                     </button>
                   </div>
@@ -187,9 +187,9 @@ export class Settings {
               <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                 ${state.categories.filter(c => c.type === 'income').map(c => `
                   <div class="badge badge-subtle flex items-center gap-2" style="padding: 6px 10px; font-size: 13px; border: 1px solid var(--border-subtle);">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${c.color || '#10b981'}; display: inline-block;"></span>
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background-color: ${safeColor(c.color || '#10b981')}; display: inline-block;"></span>
                     <span>${escapeHtml(c.name)}</span>
-                    <button type="button" class="btn-delete-cat text-muted" data-id="${c.id}" title="Xóa hạng mục" style="background: none; border: none; cursor: pointer; padding: 0; margin-left: 4px; display: flex; align-items: center; color: var(--expense-primary);">
+                    <button type="button" class="btn-delete-cat text-muted" data-id="${escapeHtml(c.id)}" title="Xóa hạng mục" style="background: none; border: none; cursor: pointer; padding: 0; margin-left: 4px; display: flex; align-items: center; color: var(--expense-primary);">
                       <i data-lucide="x" style="width: 12px; height: 12px;"></i>
                     </button>
                   </div>

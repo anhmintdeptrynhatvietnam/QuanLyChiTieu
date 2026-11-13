@@ -191,6 +191,12 @@ class App {
         badgeEl.title = 'Đang đồng bộ dữ liệu với Firebase Cloud';
         const icon = badgeEl.querySelector('i');
         if (icon) icon.setAttribute('data-lucide', 'refresh-cw');
+      } else if (fbStatus.status === 'offline') {
+        badgeEl.className = 'badge badge-subtle';
+        textEl.textContent = 'Offline';
+        badgeEl.title = fbStatus.message;
+        const icon = badgeEl.querySelector('i');
+        if (icon) icon.setAttribute('data-lucide', 'wifi-off');
       } else if (fbStatus.status === 'error') {
         badgeEl.className = 'badge badge-expense';
         textEl.textContent = 'Lỗi kết nối';

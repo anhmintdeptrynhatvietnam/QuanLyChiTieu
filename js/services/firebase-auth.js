@@ -44,7 +44,7 @@ class FirebaseAuthService {
         this.isInitialized = true;
         return this.auth;
       } catch (err) {
-        console.error('Lỗi khởi tạo Firebase Auth:', err);
+        console.warn('Lỗi khởi tạo Firebase Auth:', err);
         // Allow ensureReady() to retry later (e.g. after coming back online).
         this.ready = null;
         throw err;

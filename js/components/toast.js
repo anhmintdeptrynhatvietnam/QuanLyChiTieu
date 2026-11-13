@@ -33,10 +33,18 @@ export class Toast {
     const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-circle' : 'info');
     const color = type === 'success' ? 'var(--income-primary)' : (type === 'error' ? 'var(--expense-primary)' : 'var(--primary-500)');
 
-    toast.innerHTML = `
-      <i data-lucide="${icon}" style="width: 18px; height: 18px; color: ${color}; flex-shrink: 0;"></i>
-      <span>${message}</span>
-    `;
+    const iconEl = document.createElement('i');
+    iconEl.setAttribute('data-lucide', icon);
+    iconEl.style.width = '18px';
+    iconEl.style.height = '18px';
+    iconEl.style.color = color;
+    iconEl.style.flexShrink = '0';
+
+    const spanEl = document.createElement('span');
+    spanEl.textContent = message;
+
+    toast.appendChild(iconEl);
+    toast.appendChild(spanEl);
 
     container.appendChild(toast);
     if (window.lucide) window.lucide.createIcons();
