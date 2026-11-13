@@ -23,7 +23,7 @@ App ghi chép chi tiêu dùng hằng ngày trên điện thoại: ghi một kho�
 | # | Phase | Status | Phụ thuộc | Thực thi |
 |---|---|---|---|---|
 | 01 | [Design system + khối UI dùng chung](phase-01-design-system-and-ui-primitives.md) | completed | — | agy medium |
-| 02 | [Khung app + điều hướng mới](phase-02-app-shell-and-navigation.md) | pending | 01 | agy medium |
+| 02 | [Khung app + điều hướng mới](phase-02-app-shell-and-navigation.md) | completed | 01 | agy medium |
 | 03 | [Ghi giao dịch nhanh (bottom sheet)](phase-03-quick-add-sheet.md) | pending | 01, 02 | agy high + Claude review |
 | 04 | [Tổng quan](phase-04-dashboard.md) | pending | 02 | agy medium |
 | 05 | [Danh sách giao dịch](phase-05-transactions-list.md) | pending | 03 | agy medium |

@@ -1,5 +1,5 @@
 /**
- * Main Application Bootstrap & Orchestrator
+ * Main Application Bootstrap & Orchestrator (Phase 02)
  */
 import { stateStore } from './state.js';
 import { Dashboard } from './components/dashboard.js';
@@ -10,26 +10,16 @@ import { Budgets } from './components/budgets.js';
 import { Analytics } from './components/analytics.js';
 import { Settings } from './components/settings.js';
 import { TransactionModal } from './components/transaction-modal.js';
-import { firebaseAuthService } from './services/firebase-auth.js';
-import { firebaseSyncService } from './services/firebase-sync.js';
 import { ExportImportService } from './services/export-import.js';
 import { confirmDialog } from './components/confirm-dialog.js';
 import { showToast } from './components/toast.js';
 import { initTheme, getThemePreference, setThemePreference } from './ui/theme.js';
-
-const viewTitles = {
-  dashboard: 'Tổng quan',
-  transactions: 'Giao dịch',
-  wallets: 'Sổ ví & Tài khoản',
-  debts: 'Sổ Vay & Nợ',
-  budgets: 'Hạn mức ngân sách',
-  analytics: 'Báo cáo & Phân tích',
-  settings: 'Cài đặt & Đồng bộ'
-};
+import { initRouter, navigate, currentView } from './ui/router.js';
+import { setupSyncStatusSubscriber } from './ui/sync-badge.js';
+import { MoreView } from './views/more/more-view.js';
 
 class App {
   constructor() {
-    this.currentView = 'dashboard';
     this.modal = null;
   }
 
@@ -37,17 +27,21 @@ class App {
     return document.documentElement?.dataset?.theme || 'light';
   }
 
+  get currentView() {
+    return currentView();
+  }
+
   init() {
     initTheme();
-    window.setAppTheme = (theme) => this.applyTheme(theme);
+    window.setAppTheme = (theme) => setThemePreference(theme);
     window.getAppTheme = () => this.theme;
 
     this.initComponents();
-    this.setupNavigation();
     this.setupThemeToggle();
     this.setupThemeListener();
     this.setupActionButtons();
-    this.setupSyncStatusSubscriber();
+    setupSyncStatusSubscriber();
+    this.setupRouter();
     this.registerServiceWorker();
     this.renderIcons();
   }
@@ -73,6 +67,7 @@ class App {
     this.budgets = new Budgets('view-budgets');
     this.analytics = new Analytics('view-analytics');
     this.settings = new Settings('view-settings');
+    this.more = new MoreView('view-more');
 
     // Cloud sign-in preparation (legacy migration, first sign-in choice) needs these UI hooks.
     stateStore.setCloudSessionUi({
@@ -82,18 +77,14 @@ class App {
     });
   }
 
-  applyTheme(theme) {
-    setThemePreference(theme);
-  }
-
   setupThemeListener() {
     window.addEventListener('themechange', () => {
       this.updateSidebarThemeButton();
       // Charts read CSS variables at creation time, so they go stale on toggle
-      if (this.currentView === 'analytics' && this.analytics) {
+      if (currentView() === 'analytics' && this.analytics) {
         this.analytics.render();
       }
-      if (this.currentView === 'settings' && this.settings) {
+      if (currentView() === 'settings' && this.settings) {
         this.settings.render();
       }
     });
@@ -104,7 +95,6 @@ class App {
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
         const pref = getThemePreference();
-        // Cycle: light -> dark -> system -> light
         const nextPref = pref === 'light' ? 'dark' : pref === 'dark' ? 'system' : 'light';
         setThemePreference(nextPref);
       });
@@ -131,113 +121,39 @@ class App {
     this.renderIcons();
   }
 
-  setupNavigation() {
-    document.querySelectorAll('[data-view]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const viewId = e.currentTarget.getAttribute('data-view');
-        this.switchView(viewId);
-      });
+  setupRouter() {
+    initRouter({
+      onChange: (viewId) => {
+        if (viewId === 'analytics' && this.analytics) this.analytics.render();
+        if (viewId === 'dashboard' && this.dashboard) this.dashboard.render();
+        if (viewId === 'debts' && this.debts) this.debts.render();
+        if (viewId === 'more' && this.more) this.more.render();
+        this.renderIcons();
+      }
     });
   }
 
   switchView(viewId) {
-    if (!viewTitles[viewId]) return;
-    this.currentView = viewId;
-
-    document.querySelectorAll('[data-view]').forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('data-view') === viewId);
-    });
-
-    document.querySelectorAll('.view-section').forEach(section => {
-      section.classList.toggle('active', section.id === `view-${viewId}`);
-    });
-
-    const pageTitle = document.getElementById('page-title');
-    if (pageTitle) pageTitle.textContent = viewTitles[viewId];
-
-    if (viewId === 'analytics') this.analytics.render();
-    if (viewId === 'dashboard') this.dashboard.render();
-    if (viewId === 'debts') this.debts.render();
-
-    this.renderIcons();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate(viewId);
   }
 
   setupActionButtons() {
+    const handleAdd = () => {
+      if (this.modal && typeof this.modal.open === 'function') {
+        this.modal.open();
+      }
+    };
     const addBtnHeader = document.getElementById('btn-add-transaction-header');
     const fabBtn = document.getElementById('btn-fab-add');
 
-    const handleAdd = () => this.modal.open();
     if (addBtnHeader) addBtnHeader.addEventListener('click', handleAdd);
     if (fabBtn) fabBtn.addEventListener('click', handleAdd);
   }
 
-  setupSyncStatusSubscriber() {
-    const badge = document.getElementById('sync-status-badge');
-    if (badge) {
-      const openSync = () => {
-        this.switchView('settings');
-      };
-      badge.addEventListener('click', openSync);
-      badge.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          openSync();
-        }
-      });
-    }
-
-    const updateBadge = () => {
-      const badgeEl = document.getElementById('sync-status-badge');
-      const textEl = document.getElementById('sync-status-text');
-      if (!badgeEl || !textEl) return;
-
-      const state = stateStore.getState();
-      const fbUser = firebaseAuthService.getCurrentUser() || state.settings?.firebaseUser;
-      const fbStatus = firebaseSyncService.getStatus();
-
-      if (fbUser && fbStatus.status === 'connected') {
-        badgeEl.className = 'badge badge-income';
-        textEl.textContent = '⚡ Đã kết nối Cloud';
-        badgeEl.title = 'Firebase Cloud: Đang kết nối và đồng bộ tức thì';
-        const icon = badgeEl.querySelector('i');
-        if (icon) icon.setAttribute('data-lucide', 'zap');
-      } else if (fbUser && fbStatus.status === 'syncing') {
-        badgeEl.className = 'badge badge-subtle';
-        textEl.textContent = 'Đang đồng bộ...';
-        badgeEl.title = 'Đang đồng bộ dữ liệu với Firebase Cloud';
-        const icon = badgeEl.querySelector('i');
-        if (icon) icon.setAttribute('data-lucide', 'refresh-cw');
-      } else if (fbStatus.status === 'offline') {
-        badgeEl.className = 'badge badge-subtle';
-        textEl.textContent = 'Offline';
-        badgeEl.title = fbStatus.message;
-        const icon = badgeEl.querySelector('i');
-        if (icon) icon.setAttribute('data-lucide', 'wifi-off');
-      } else if (fbStatus.status === 'error') {
-        badgeEl.className = 'badge badge-expense';
-        textEl.textContent = 'Lỗi kết nối';
-        badgeEl.title = fbStatus.message;
-        const icon = badgeEl.querySelector('i');
-        if (icon) icon.setAttribute('data-lucide', 'alert-circle');
-      } else {
-        badgeEl.className = 'badge badge-subtle';
-        textEl.textContent = 'Chưa kết nối Cloud';
-        badgeEl.title = 'Bấm để vào Cài đặt và kết nối Cloud';
-        const icon = badgeEl.querySelector('i');
-        if (icon) icon.setAttribute('data-lucide', 'cloud-off');
-      }
-
-      this.renderIcons();
-    };
-
-    stateStore.subscribe(updateBadge);
-    firebaseSyncService.onStatusChange(updateBadge);
-    updateBadge();
-  }
-
   renderIcons() {
-    if (window.lucide) window.lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
   }
 }
 
