@@ -58,7 +58,7 @@ and `docs/code-standards.md` — read them before non-trivial changes.
   Code's Live Server extension (or any static server) for the best experience.
 - Regenerate PWA PNG icons: `node scripts/generate-icons.js` (writes into
   `assets/icons/`).
-- No lint/test/typecheck config exists in this repo — do not invent one.
+- Run tests: `node --test "tests/*.test.mjs"` (quote the glob; a bare `tests/` dir is not discovered on Node 24; zero dependencies, `node:test` + `node:assert/strict`, files `tests/*.test.mjs`). Tests cover pure modules in `js/domain/` and `js/utils/formatters.js`; there is no lint/typecheck config — do not invent one.
 
 ### Architecture
 

@@ -7,6 +7,8 @@ import { generateId, getCurrentDateFormatted } from './utils/helpers.js';
 import { getMonthYear } from './utils/formatters.js';
 import { firebaseAuthService } from './services/firebase-auth.js';
 import { firebaseSyncService } from './services/firebase-sync.js';
+import { computeWalletBalances } from './domain/ledger.js';
+import { applyRepayment } from './domain/debt-rules.js';
 
 class StateStore {
   constructor() {
@@ -328,8 +330,9 @@ class StateStore {
     debt.repayments = debt.repayments || [];
     debt.repayments.push(repayment);
 
-    debt.remainingAmount = Math.max(0, (Number(debt.remainingAmount) || debt.amount) - repayAmount);
-    debt.status = debt.remainingAmount === 0 ? 'paid' : 'partially_paid';
+    const { remainingAmount, status } = applyRepayment(debt, repayAmount);
+    debt.remainingAmount = remainingAmount;
+    debt.status = status;
     debt.updatedAt = new Date().toISOString();
 
     this.recalculateWalletBalances();
@@ -356,44 +359,7 @@ class StateStore {
   }
 
   recalculateWalletBalances() {
-    const balances = {};
-    this.state.wallets.forEach(w => {
-      balances[w.id] = Number(w.initialBalance) || 0;
-    });
-
-    // 1. Transactions impact
-    this.state.transactions.forEach(t => {
-      const amt = Number(t.amount) || 0;
-      if (t.type === 'expense' && balances[t.walletId] !== undefined) {
-        balances[t.walletId] -= amt;
-      } else if (t.type === 'income' && balances[t.walletId] !== undefined) {
-        balances[t.walletId] += amt;
-      } else if (t.type === 'transfer') {
-        if (balances[t.walletId] !== undefined) balances[t.walletId] -= amt;
-        if (t.toWalletId && balances[t.toWalletId] !== undefined) balances[t.toWalletId] += amt;
-      }
-    });
-
-    // 2. Debts impact
-    (this.state.debts || []).forEach(debt => {
-      const amt = Number(debt.amount) || 0;
-      if (debt.type === 'lend' && balances[debt.walletId] !== undefined) {
-        balances[debt.walletId] -= amt; // Cho vay -> tiền ra khỏi ví
-      } else if (debt.type === 'borrow' && balances[debt.walletId] !== undefined) {
-        balances[debt.walletId] += amt; // Đi vay -> tiền vào ví
-      }
-
-      // Repayments impact
-      (debt.repayments || []).forEach(rep => {
-        const repAmt = Number(rep.amount) || 0;
-        if (debt.type === 'lend' && balances[rep.walletId] !== undefined) {
-          balances[rep.walletId] += repAmt; // Thu nợ -> tiền vào ví
-        } else if (debt.type === 'borrow' && balances[rep.walletId] !== undefined) {
-          balances[rep.walletId] -= repAmt; // Trả nợ -> tiền ra khỏi ví
-        }
-      });
-    });
-
+    const balances = computeWalletBalances(this.state.wallets, this.state.transactions, this.state.debts);
     this.state.wallets.forEach(w => {
       w.currentBalance = balances[w.id] !== undefined ? balances[w.id] : (Number(w.initialBalance) || 0);
     });
