@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.16';
+const CACHE_NAME = 'qlct-pwa-v2.18';
 const CDN_CACHE = 'qlct-cdn-v1';
 
 const CDN_HOSTS = new Set([
@@ -76,6 +76,7 @@ const ASSETS_TO_CACHE = [
   './js/ui/currency-input.js',
   './js/ui/icons.js',
   './js/ui/router.js',
+  './js/ui/sw-update.js',
   './js/ui/sync-badge.js',
   './js/ui/theme.js',
   './js/ui/transaction-row.js',

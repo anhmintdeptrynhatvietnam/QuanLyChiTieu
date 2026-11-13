@@ -123,4 +123,4 @@ Các bài test bao phủ toàn bộ logic nghiệp vụ thuần trong thư mục
 4. **Cấp quyền tên miền trong Firebase Console**:
    - Truy cập **Firebase Console** → **Authentication** → **Settings** → **Authorized domains**.
    - Thêm tên miền GitHub Pages của bạn (ví dụ: `<username>.github.io`). Nếu không thêm, Google Sign-in sẽ gặp lỗi `auth/unauthorized-domain`.
-5. **Lưu ý sau mỗi lần phát hành (Release)**: Cần tải lại trang (reload) trên mọi thiết bị đang mở để Service Worker cập nhật phiên bản cache mới nhất.
+5. **Lưu ý sau mỗi lần phát hành (Release)**: Bump `CACHE_NAME` trong `sw.js`. Từ bản 2.1.1, app tự tải lại một lần khi bản mới được kích hoạt; thiết bị còn chạy bản cũ hơn 2.1.1 cần tải lại trang thủ công 1–2 lần.

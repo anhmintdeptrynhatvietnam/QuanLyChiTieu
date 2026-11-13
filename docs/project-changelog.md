@@ -4,6 +4,11 @@ Tất cả các thay đổi quan trọng của dự án Ứng Dụng Quản Lý 
 
 ---
 
+## [2.1.1] - 2026-11-14
+
+### Thay đổi (Changed)
+- Tự động tải lại ứng dụng khi bản phát hành mới được kích hoạt ([js/ui/sw-update.js](../js/ui/sw-update.js)): chỉ cần mở app một lần là lên bản mới (từ bản 2.1.1 trở đi). Lần cài đầu không tải lại; nếu đang mở form nhập liệu, app chờ đóng form rồi mới tải lại. App đã cài (PWA) tự kiểm tra bản mới mỗi khi được mở lại từ nền.
+
 ## [2.1.0] - 2026-11-14
 
 ### Thay đổi (Changed)
