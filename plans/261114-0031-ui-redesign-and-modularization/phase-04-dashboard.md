@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Tổng quan"
-status: pending
+status: completed
 dependencies: [2]
 ---
 

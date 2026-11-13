@@ -2,13 +2,13 @@
  * Main Application Bootstrap & Orchestrator (Phase 03)
  */
 import { stateStore } from './state.js';
-import { Dashboard } from './components/dashboard.js';
+import { DashboardView } from './views/dashboard/dashboard-view.js';
 import { TransactionList } from './components/transaction-list.js';
-import { Wallets } from './components/wallets.js';
-import { Debts } from './components/debts.js';
-import { Budgets } from './components/budgets.js';
-import { Analytics } from './components/analytics.js';
-import { Settings } from './components/settings.js';
+import { WalletsView } from './views/wallets/wallets-view.js';
+import { DebtsView } from './views/debts/debts-view.js';
+import { BudgetsView } from './views/budgets/budgets-view.js';
+import { AnalyticsView } from './views/analytics/analytics-view.js';
+import { SettingsView } from './views/settings/settings-view.js';
 import { ExportImportService } from './services/export-import.js';
 import { confirmDialog } from './components/confirm-dialog.js';
 import { showToast } from './components/toast.js';
@@ -63,13 +63,13 @@ class App {
     };
     this.modal = window.transactionModal;
 
-    this.dashboard = new Dashboard('view-dashboard');
+    this.dashboard = new DashboardView('view-dashboard');
     this.txList = new TransactionList('view-transactions');
-    this.wallets = new Wallets('view-wallets');
-    this.debts = new Debts('view-debts');
-    this.budgets = new Budgets('view-budgets');
-    this.analytics = new Analytics('view-analytics');
-    this.settings = new Settings('view-settings');
+    this.wallets = new WalletsView('view-wallets');
+    this.debts = new DebtsView('view-debts');
+    this.budgets = new BudgetsView('view-budgets');
+    this.analytics = new AnalyticsView('view-analytics');
+    this.settings = new SettingsView('view-settings');
     this.more = new MoreView('view-more');
 
     // Cloud sign-in preparation (legacy migration, first sign-in choice) needs these UI hooks.
@@ -127,10 +127,12 @@ class App {
   setupRouter() {
     initRouter({
       onChange: (viewId) => {
-        if (viewId === 'analytics' && this.analytics) this.analytics.render();
-        if (viewId === 'dashboard' && this.dashboard) this.dashboard.render();
-        if (viewId === 'debts' && this.debts) this.debts.render();
-        if (viewId === 'more' && this.more) this.more.render();
+        // Views may skip re-rendering while hidden, so always refresh the one being shown.
+        const views = {
+          dashboard: this.dashboard, transactions: this.txList, wallets: this.wallets, debts: this.debts,
+          budgets: this.budgets, analytics: this.analytics, settings: this.settings, more: this.more
+        };
+        views[viewId]?.render?.();
         this.renderIcons();
       }
     });

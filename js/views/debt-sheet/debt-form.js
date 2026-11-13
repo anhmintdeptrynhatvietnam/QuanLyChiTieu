@@ -68,9 +68,11 @@ export function renderDebtForm({ action = 'lend', debtId = null, onDone = null }
 
       if (!selectedDebtId || !debts.some((d) => d.id === selectedDebtId)) {
         selectedDebtId = debts[0]?.id || null;
-        if (debts[0]?.remainingAmount) {
-          amountInput.value = formatNumber(debts[0].remainingAmount);
-        }
+      }
+      // Prefill with the remaining amount of the selected debt (also when opened with a debtId).
+      const selectedDebt = debts.find((d) => d.id === selectedDebtId);
+      if (selectedDebt?.remainingAmount && !amountInput.value) {
+        amountInput.value = formatNumber(selectedDebt.remainingAmount);
       }
 
       renderDebtPickerRows({

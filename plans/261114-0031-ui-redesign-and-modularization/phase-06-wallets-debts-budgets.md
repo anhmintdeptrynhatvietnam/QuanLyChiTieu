@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "Ví · Vay/Nợ · Ngân sách"
-status: pending
+status: completed
 dependencies: [1, 2]
 ---
 

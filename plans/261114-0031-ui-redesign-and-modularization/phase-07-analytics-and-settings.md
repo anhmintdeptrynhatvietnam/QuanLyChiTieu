@@ -1,7 +1,7 @@
 ---
 phase: 7
 title: "Báo cáo · Cài đặt"
-status: pending
+status: completed
 dependencies: [1, 2]
 ---
 
