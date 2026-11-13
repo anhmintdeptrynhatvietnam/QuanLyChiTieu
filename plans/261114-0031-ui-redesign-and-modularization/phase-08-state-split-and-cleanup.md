@@ -1,7 +1,7 @@
 ---
 phase: 8
 title: "Tách state.js, gỡ global, dọn CSS"
-status: pending
+status: completed
 dependencies: [3, 4, 5, 6, 7]
 ---
 

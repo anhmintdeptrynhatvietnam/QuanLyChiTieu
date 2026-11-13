@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.14';
+const CACHE_NAME = 'qlct-pwa-v2.16';
 const CDN_CACHE = 'qlct-cdn-v1';
 
 const CDN_HOSTS = new Set([
@@ -47,6 +47,9 @@ const ASSETS_TO_CACHE = [
   './js/domain/ledger.js',
   './js/domain/legacy-migration.js',
   './js/domain/period-summary.js',
+  './js/domain/push-diff.js',
+  './js/domain/record-hash.js',
+  './js/domain/remote-merge.js',
   './js/domain/settings-migration.js',
   './js/domain/sync-diff.js',
   './js/domain/transaction-entry.js',
@@ -56,9 +59,18 @@ const ASSETS_TO_CACHE = [
   './js/services/firebase-auth.js',
   './js/services/firebase-migration.js',
   './js/services/firebase-sdk.js',
+  './js/services/firebase-sync-listeners.js',
+  './js/services/firebase-sync-ops.js',
+  './js/services/firebase-sync-pull.js',
   './js/services/firebase-sync.js',
   './js/services/storage.js',
   './js/state.js',
+  './js/state/category-budget-actions.js',
+  './js/state/cloud-session-actions.js',
+  './js/state/debt-actions.js',
+  './js/state/persistence.js',
+  './js/state/transaction-actions.js',
+  './js/state/wallet-actions.js',
   './js/ui/bottom-sheet.js',
   './js/ui/category-grid.js',
   './js/ui/currency-input.js',
@@ -75,6 +87,7 @@ const ASSETS_TO_CACHE = [
   './js/views/analytics/analytics-breakdown.js',
   './js/views/analytics/analytics-charts.js',
   './js/views/analytics/analytics-view.js',
+  './js/views/budgets/budget-item.js',
   './js/views/budgets/budget-sheet.js',
   './js/views/budgets/budgets-view.js',
   './js/views/dashboard/dashboard-cards.js',
@@ -83,6 +96,7 @@ const ASSETS_TO_CACHE = [
   './js/views/debt-sheet/debt-form.js',
   './js/views/debt-sheet/debt-picker.js',
   './js/views/debt-sheet/debt-sheet.js',
+  './js/views/debts/debt-card.js',
   './js/views/debts/debt-detail-sheet.js',
   './js/views/debts/debt-edit-sheet.js',
   './js/views/debts/debts-view.js',

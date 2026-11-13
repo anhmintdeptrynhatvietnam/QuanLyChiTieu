@@ -1,22 +1,8 @@
 /**
- * Shared modal accessibility wiring: ARIA dialog semantics, Escape-to-close,
- * and focus management (focus trap and focus restoration).
+ * Shared modal accessibility wiring: focus management (focus trap and focus restoration).
  */
 
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-export function attachModalA11y(overlayEl, titleId, closeFn) {
-  if (!overlayEl) return;
-  overlayEl.setAttribute('role', 'dialog');
-  overlayEl.setAttribute('aria-modal', 'true');
-  if (titleId) overlayEl.setAttribute('aria-labelledby', titleId);
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && overlayEl.classList.contains('active')) {
-      closeFn();
-    }
-  });
-}
 
 export function getFocusableElements(container) {
   if (!container) return [];

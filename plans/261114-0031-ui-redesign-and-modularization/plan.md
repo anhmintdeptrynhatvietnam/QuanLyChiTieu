@@ -29,7 +29,7 @@ App ghi chép chi tiêu dùng hằng ngày trên điện thoại: ghi một kho�
 | 05 | [Danh sách giao dịch](phase-05-transactions-list.md) | completed | 03 | agy medium |
 | 06 | [Ví · Vay/Nợ · Ngân sách](phase-06-wallets-debts-budgets.md) | completed | 01, 02 | agy medium |
 | 07 | [Báo cáo · Cài đặt](phase-07-analytics-and-settings.md) | completed | 01, 02 | agy medium |
-| 08 | [Tách state.js, gỡ global, dọn CSS](phase-08-state-split-and-cleanup.md) | pending | 03-07 | agy medium |
+| 08 | [Tách state.js, gỡ global, dọn CSS](phase-08-state-split-and-cleanup.md) | completed | 03-07 | agy medium |
 | 09 | [Kiểm thử toàn bộ + release](phase-09-verification-and-release.md) | pending | 01-08 | Claude |
 
 Thứ tự: 01 → 02 → 03 → (04 ∥ 06 ∥ 07, khác file) → 05 → 08 → 09.

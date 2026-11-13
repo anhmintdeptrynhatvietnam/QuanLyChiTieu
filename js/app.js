@@ -1,5 +1,5 @@
 /**
- * Main Application Bootstrap & Orchestrator (Phase 03)
+ * Main Application Bootstrap & Orchestrator
  */
 import { stateStore } from './state.js';
 import { DashboardView } from './views/dashboard/dashboard-view.js';
@@ -19,10 +19,6 @@ import { MoreView } from './views/more/more-view.js';
 import { openTransactionSheet } from './views/transaction-sheet/transaction-sheet.js';
 
 class App {
-  constructor() {
-    this.modal = null;
-  }
-
   get theme() {
     return document.documentElement?.dataset?.theme || 'light';
   }
@@ -33,9 +29,6 @@ class App {
 
   init() {
     initTheme();
-    window.setAppTheme = (theme) => setThemePreference(theme);
-    window.getAppTheme = () => this.theme;
-
     this.initComponents();
     this.setupThemeToggle();
     this.setupThemeListener();
@@ -57,12 +50,6 @@ class App {
   }
 
   initComponents() {
-    // Backwards-compatibility shim for other views calling window.transactionModal.open(id)
-    window.transactionModal = {
-      open: (id) => openTransactionSheet({ txId: id || null })
-    };
-    this.modal = window.transactionModal;
-
     this.dashboard = new DashboardView('view-dashboard');
     this.txList = new TransactionsView('view-transactions');
     this.wallets = new WalletsView('view-wallets');
@@ -161,5 +148,4 @@ class App {
 document.addEventListener('DOMContentLoaded', () => {
   const app = new App();
   app.init();
-  window.appInstance = app;
 });

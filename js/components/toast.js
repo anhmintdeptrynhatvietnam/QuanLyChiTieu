@@ -61,7 +61,3 @@ export class Toast {
 export function showToast(message, type = 'success', duration = 3000) {
   Toast.show(message, type, duration);
 }
-
-if (typeof window !== 'undefined') {
-  window.showToast = showToast;
-}
