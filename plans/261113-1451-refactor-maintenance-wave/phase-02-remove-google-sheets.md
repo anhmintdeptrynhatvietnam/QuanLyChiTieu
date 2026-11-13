@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Gỡ Google Sheets"
-status: pending
+status: completed
 priority: P1
 effort: "0.5d"
 dependencies: [1]
@@ -34,10 +34,10 @@ Xoá toàn bộ tích hợp Google Sheets (GIS OAuth + Sheets API + sync modal).
 5. Cập nhật `sw.js`, `manifest.json`, meta.
 
 ## Success Criteria
-- [ ] `grep -rniE "google-sheets|google-auth|sync-modal|gsi/client|googleClientId|spreadsheet" js index.html sw.js` không còn kết quả.
-- [ ] `node --test "tests/*.test.mjs"` xanh.
-- [ ] Console không lỗi khi mở app; trang Cài đặt hiển thị đủ phần Firebase, danh mục, dữ liệu.
-- [ ] Smoke test bước 4, 5, 7 pass.
+- [x] `grep -rniE "google-sheets|google-auth|sync-modal|gsi/client|googleClientId|spreadsheet" js index.html sw.js` không còn kết quả.
+- [x] `node --test "tests/*.test.mjs"` xanh.
+- [x] Console không lỗi khi mở app; trang Cài đặt hiển thị đủ phần Firebase, danh mục, dữ liệu.
+- [x] Smoke test bước 5, 7 pass. Bước 4 (đăng nhập Firebase, 2 tab) chưa chạy: đăng nhập ẩn danh sẽ ghi vào project Firebase dùng chung — để test ở Phase 04 trên tài khoản ẩn danh mới.
 
 ## Risk Assessment
 - `window.syncModal` được tạo trong `settings.js:17` và dùng ở `app.js:162` → xoá cả hai đầu, nếu sót sẽ có lỗi `undefined` khi bấm badge (signal: lỗi console khi click badge).

@@ -75,15 +75,12 @@ export const DEFAULT_SETTINGS = {
   currency: 'VND',
   currencySymbol: '₫',
   theme: 'light',
-  googleClientId: '',
-  spreadsheetId: '',
-  spreadsheetName: 'QuanLyChiTieu_DB',
-  autoSync: true,
-  lastSyncTime: null,
   syncProvider: 'firebase',
   firebaseConfig: DEFAULT_FIREBASE_CONFIG,
   firebaseUser: null
 };
+
+export const LEGACY_LOCAL_STORAGE_KEYS = ['quanlythuchi_google_access_token', 'quanlythuchi_google_token_expires_at'];
 
 export const STORAGE_KEYS = {
   TRANSACTIONS: 'qlct_transactions',

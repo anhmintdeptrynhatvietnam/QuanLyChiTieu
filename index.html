@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sổ Thu Chi - Quản Lý Chi Tiêu Cá Nhân</title>
-  <meta name="description" content="Ứng dụng quản lý chi tiêu cá nhân thuần Frontend, hoạt động offline và tự động đồng bộ Google Sheets.">
+  <meta name="description" content="Ứng dụng quản lý chi tiêu cá nhân thuần Frontend, hoạt động offline và đồng bộ đám mây realtime qua Firebase.">
   <meta name="theme-color" content="#2563eb">
   
   <!-- Mobile & PWA Settings -->
@@ -34,7 +34,6 @@
   <!-- External Libraries via CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div class="app-container">
@@ -46,7 +45,7 @@
         </div>
         <div>
           <h2 style="font-size: var(--font-size-base); font-weight: 700;">Sổ Thu Chi</h2>
-          <small style="color: var(--text-muted); font-size: 11px;">Local & Google Sheets</small>
+          <small style="color: var(--text-muted); font-size: 11px;">Local & Firebase Cloud</small>
         </div>
       </div>
 
@@ -98,9 +97,9 @@
         </div>
 
         <div class="flex items-center gap-3">
-          <div id="sync-status-badge" class="badge badge-subtle" style="cursor: pointer; transition: all 0.2s ease;" role="button" tabindex="0" aria-label="Mở bảng Đồng Bộ Google Sheets" title="Bấm để mở bảng Đồng Bộ Google Sheets (2 Chiều)">
+          <div id="sync-status-badge" class="badge badge-subtle" style="cursor: pointer; transition: all 0.2s ease;" role="button" tabindex="0" aria-label="Mở Cài đặt đồng bộ Cloud" title="Mở Cài đặt đồng bộ Cloud">
             <i data-lucide="cloud-off" style="width: 14px; height: 14px;"></i>
-            <span id="sync-status-text">Chưa kết nối Google</span>
+            <span id="sync-status-text">Chưa kết nối Cloud</span>
           </div>
 
           <button class="btn btn-primary" id="btn-add-transaction-header">

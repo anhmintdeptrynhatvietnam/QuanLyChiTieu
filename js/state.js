@@ -1,7 +1,7 @@
 /**
  * Central Reactive State Manager (Pub/Sub Store)
  */
-import { DEFAULT_CATEGORIES, DEFAULT_WALLETS, DEFAULT_SETTINGS, DEFAULT_FIREBASE_CONFIG, STORAGE_KEYS, CATEGORY_PALETTE } from './config.js';
+import { DEFAULT_CATEGORIES, DEFAULT_WALLETS, DEFAULT_SETTINGS, DEFAULT_FIREBASE_CONFIG, STORAGE_KEYS, CATEGORY_PALETTE, LEGACY_LOCAL_STORAGE_KEYS } from './config.js';
 import { StorageService } from './services/storage.js';
 import { generateId, getCurrentDateFormatted } from './utils/helpers.js';
 import { getMonthYear } from './utils/formatters.js';
@@ -9,6 +9,7 @@ import { firebaseAuthService } from './services/firebase-auth.js';
 import { firebaseSyncService } from './services/firebase-sync.js';
 import { computeWalletBalances } from './domain/ledger.js';
 import { applyRepayment } from './domain/debt-rules.js';
+import { sanitizeLegacySettings } from './domain/settings-migration.js';
 
 class StateStore {
   constructor() {
@@ -19,11 +20,11 @@ class StateStore {
       categories: StorageService.get(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES),
       budgets: StorageService.get(STORAGE_KEYS.BUDGETS, []),
       debts: StorageService.get(STORAGE_KEYS.DEBTS, []),
-      settings: StorageService.get(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS),
-      syncStatus: { status: 'idle', message: 'Chưa kết nối Google', lastSync: null }
+      settings: sanitizeLegacySettings(StorageService.get(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS))
     };
     this.ensureUniqueCategoryColors();
     this.recalculateWalletBalances();
+    LEGACY_LOCAL_STORAGE_KEYS.forEach(k => StorageService.remove(k));
     this.initFirebase();
   }
 
@@ -393,11 +394,6 @@ class StateStore {
     this.notify('settings:updated', this.state.settings);
   }
 
-  setSyncStatus(statusObj) {
-    this.state.syncStatus = { ...this.state.syncStatus, ...statusObj };
-    this.notify('sync:status', this.state.syncStatus);
-  }
-
   importAllData(payload) {
     if (payload.transactions) {
       const seen = new Set();
@@ -432,7 +428,7 @@ class StateStore {
         return true;
       });
     }
-    if (payload.settings) this.state.settings = { ...this.state.settings, ...payload.settings };
+    if (payload.settings) this.state.settings = { ...this.state.settings, ...sanitizeLegacySettings(payload.settings) };
 
     this.recalculateWalletBalances();
     this.notify('data:imported', this.state);

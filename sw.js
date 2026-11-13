@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.3';
+const CACHE_NAME = 'qlct-pwa-v2.4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const ASSETS_TO_CACHE = [
   './js/state.js',
   './js/domain/ledger.js',
   './js/domain/debt-rules.js',
+  './js/domain/settings-migration.js',
   './js/components/dashboard.js',
   './js/components/transaction-list.js',
   './js/components/wallets.js',
@@ -25,13 +26,10 @@ const ASSETS_TO_CACHE = [
   './js/components/analytics.js',
   './js/components/settings.js',
   './js/components/transaction-modal.js',
-  './js/components/sync-modal.js',
   './js/components/confirm-dialog.js',
   './js/components/toast.js',
   './js/services/storage.js',
   './js/services/export-import.js',
-  './js/services/google-auth.js',
-  './js/services/google-sheets.js',
   './js/services/firebase-auth.js',
   './js/services/firebase-sync.js',
   './js/utils/formatters.js',
@@ -71,7 +69,7 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Ignore Google OAuth or Google Sheets API requests (always live network)
+  // Ignore Firebase / Google APIs requests (always live network)
   const url = event.request.url;
   if (url.includes('googleapis.com') || url.includes('accounts.google.com')) {
     return;

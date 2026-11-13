@@ -1,7 +1,7 @@
 {
   "name": "Sổ Thu Chi - Quản Lý Chi Tiêu Cá Nhân",
   "short_name": "Sổ Thu Chi",
-  "description": "Ứng dụng quản lý chi tiêu cá nhân thuần Frontend, hoạt động offline và tự động đồng bộ đám mây cá nhân với Google Sheets.",
+  "description": "Ứng dụng quản lý chi tiêu cá nhân thuần Frontend, hoạt động offline và đồng bộ đám mây realtime qua Firebase.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

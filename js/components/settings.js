@@ -1,10 +1,7 @@
 import { stateStore } from '../state.js';
-import { googleAuthService } from '../services/google-auth.js';
-import { GoogleSheetsService } from '../services/google-sheets.js';
 import { ExportImportService } from '../services/export-import.js';
 import { firebaseAuthService } from '../services/firebase-auth.js';
 import { firebaseSyncService } from '../services/firebase-sync.js';
-import { SyncModal } from './sync-modal.js';
 import { showToast } from './toast.js';
 import { confirmDialog } from './confirm-dialog.js';
 import { escapeHtml } from '../utils/helpers.js';
@@ -13,8 +10,6 @@ import { CATEGORY_PALETTE, DEFAULT_FIREBASE_CONFIG } from '../config.js';
 export class Settings {
   constructor(containerId = 'view-settings') {
     this.container = document.getElementById(containerId);
-    this.syncModal = new SyncModal();
-    window.syncModal = this.syncModal;
     this.init();
   }
 
@@ -27,10 +22,6 @@ export class Settings {
 
   render() {
     const state = stateStore.getState();
-    const isConnected = googleAuthService.getValidToken() !== null;
-    const syncStatus = state.syncStatus;
-    const hasBackup = GoogleSheetsService.hasPrePullBackup();
-    const backupInfo = hasBackup ? GoogleSheetsService.getPrePullBackupInfo() : null;
     const currentTheme = document.documentElement.getAttribute('data-theme') || (typeof window.getAppTheme === 'function' ? window.getAppTheme() : localStorage.getItem('theme')) || 'light';
 
     const fbUser = firebaseAuthService.getCurrentUser() || state.settings?.firebaseUser;
@@ -40,33 +31,7 @@ export class Settings {
 
     this.container.innerHTML = `
       <div class="flex flex-col gap-6">
-        <!-- Undo Banner (if user pulled recently) -->
-        ${hasBackup && backupInfo ? `
-          <div class="card" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-left: 4px solid #f59e0b; padding: var(--space-3);">
-            <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 8px;">
-              <div class="flex items-center gap-2">
-                <i data-lucide="info" style="width: 18px; height: 18px; color: #f59e0b; flex-shrink: 0;"></i>
-                <div>
-                  <strong style="color: #d97706; font-size: var(--font-size-sm);">Bản sao lưu trước khi kéo từ Cloud</strong>
-                  <div class="text-muted" style="font-size: 11px;">
-                    Lưu lúc ${new Date(backupInfo.savedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} (${backupInfo.txCount || 0} giao dịch, ${backupInfo.walletCount || 0} ví)
-                  </div>
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <button type="button" class="btn btn-primary" id="btn-undo-pull" style="padding: 5px 10px; font-size: var(--font-size-xs); background: #d97706; border-color: #d97706;">
-                  <i data-lucide="undo" style="width: 14px; height: 14px;"></i>
-                  <span>Hoàn Tác Lại</span>
-                </button>
-                <button type="button" class="btn btn-secondary" id="btn-dismiss-undo" style="padding: 5px 8px; font-size: var(--font-size-xs);">
-                  Bỏ qua
-                </button>
-              </div>
-            </div>
-          </div>
-        ` : ''}
-
-        <!-- Firebase Cloud Sync Card (Primary) -->
+        <!-- Firebase Cloud Sync Card -->
         <div class="card" style="border: 2px solid ${isFbConnected ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-subtle)'}; background: var(--bg-surface-elevated);">
           <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-3);">
             <div class="flex items-center gap-2">
@@ -157,76 +122,6 @@ export class Settings {
                 </div>
               </div>
             </details>
-          </div>
-        </div>
-
-        <!-- Google Sheets Cloud Sync Card (Secondary Backup) -->
-        <div class="card">
-          <div class="flex items-center justify-between" style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-subtle); padding-bottom: var(--space-3);">
-            <div class="flex items-center gap-2">
-              <div class="badge ${isConnected ? 'badge-income' : 'badge-subtle'}">
-                <i data-lucide="${isConnected ? 'table' : 'table-properties'}" style="width: 14px; height: 14px;"></i>
-                <span>${isConnected ? 'Google Sheets Đã Kết Nối' : 'Google Sheets (Sao Lưu Thủ Công)'}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-4">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label">Google OAuth Client ID</label>
-              <div class="flex gap-2">
-                <input type="text" id="setting-client-id" class="form-input" placeholder="xxxx.apps.googleusercontent.com" value="${escapeHtml(state.settings.googleClientId || '')}">
-                <button type="button" class="btn btn-primary" id="btn-save-client-id">Lưu</button>
-              </div>
-              <small class="text-muted">Dành cho việc xuất dữ liệu trực tiếp thành bảng tính Google Sheets.</small>
-            </div>
-
-            <details class="card" style="background: var(--bg-subtle); padding: var(--space-3); margin: 0;">
-              <summary style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); font-weight: 600; color: var(--primary-600); list-style: none;">
-                <i data-lucide="book-open" style="width: 16px; height: 16px;"></i>
-                <span>Hướng dẫn lấy Google Client ID</span>
-              </summary>
-              <ol style="margin: var(--space-3) 0 0; padding-left: var(--space-5); font-size: var(--font-size-sm); color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px;">
-                <li>Truy cập console.cloud.google.com và tạo 1 Project mới.</li>
-                <li>Vào mục "APIs & Services" &gt; "Enabled APIs" &gt; Bật "Google Sheets API" và "Google Drive API".</li>
-                <li>Vào "OAuth consent screen" &gt; Chọn "External" &gt; Điền tên ứng dụng "QuanLyChiTieu".</li>
-                <li>Vào "Credentials" &gt; Bấm "Create Credentials" &gt; Chọn "OAuth Client ID" &gt; Loại "Web application".</li>
-                <li>Thêm địa chỉ web của bạn vào "Authorized JavaScript origins" (ví dụ: http://localhost:5500 hoặc https://username.github.io).</li>
-                <li>Copy Client ID dán vào ô cài đặt trên web này và bấm Lưu!</li>
-              </ol>
-            </details>
-
-            <div class="flex gap-2" style="flex-wrap: wrap; margin-top: var(--space-2);">
-              ${!isConnected ? `
-                <button type="button" class="btn btn-primary" id="btn-connect-google">
-                  <i data-lucide="log-in" style="width: 16px; height: 16px;"></i>
-                  <span>Kết Nối Tài Khoản Google</span>
-                </button>
-              ` : `
-                <button type="button" class="btn btn-primary" id="btn-open-sync-modal">
-                  <i data-lucide="cloud-upload" style="width: 16px; height: 16px;"></i>
-                  <span>Sao Lưu Google Sheets (Push)</span>
-                </button>
-                <button type="button" class="btn btn-secondary" id="btn-quick-push" title="Đẩy dữ liệu lên Google Sheets">
-                  <i data-lucide="arrow-up-circle" style="width: 16px; height: 16px; color: var(--primary-600);"></i>
-                  <span>Đẩy Lên Sheets</span>
-                </button>
-                <!-- Tạm thời tắt tính năng Pull Google Sheets để tránh ghi đè / xung đột với Firebase Realtime
-                <button type="button" class="btn btn-secondary" id="btn-quick-pull" title="Kéo dữ liệu về Máy">
-                  <i data-lucide="arrow-down-circle" style="width: 16px; height: 16px; color: #10b981;"></i>
-                  <span>Kéo Về</span>
-                </button>
-                -->
-                <button type="button" class="btn btn-secondary" id="btn-disconnect-google">
-                  <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
-                  <span>Đăng Xuất</span>
-                </button>
-              `}
-            </div>
-
-            <div class="text-muted" style="font-size: var(--font-size-xs); margin-top: var(--space-2);">
-              Trạng thái: <strong>${escapeHtml(syncStatus.message)}</strong>
-            </div>
           </div>
         </div>
 
@@ -572,114 +467,6 @@ export class Settings {
         }
       });
     });
-
-    // Save Client ID
-    const saveBtn = this.container.querySelector('#btn-save-client-id');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        const clientId = this.container.querySelector('#setting-client-id').value.trim();
-        stateStore.updateSettings({ googleClientId: clientId });
-        showToast('Đã lưu Google Client ID thành công!', 'success');
-      });
-    }
-
-    // Undo Pull
-    const undoBtn = this.container.querySelector('#btn-undo-pull');
-    if (undoBtn) {
-      undoBtn.addEventListener('click', async () => {
-        const ok = await confirmDialog('Bạn có chắc chắn muốn hoàn tác lại dữ liệu trước lần kéo gần nhất từ Google Sheets?', { danger: true });
-        if (!ok) return;
-        try {
-          GoogleSheetsService.restorePrePullBackup();
-          showToast('Đã hoàn tác lại dữ liệu thành công!', 'success');
-          this.render();
-        } catch (err) {
-          showToast('Lỗi hoàn tác: ' + err.message, 'error');
-        }
-      });
-    }
-
-    // Dismiss Undo Banner
-    const dismissUndoBtn = this.container.querySelector('#btn-dismiss-undo');
-    if (dismissUndoBtn) {
-      dismissUndoBtn.addEventListener('click', () => {
-        GoogleSheetsService.clearPrePullBackup();
-        this.render();
-      });
-    }
-
-    // Connect Google
-    const connectBtn = this.container.querySelector('#btn-connect-google');
-    if (connectBtn) {
-      connectBtn.addEventListener('click', () => {
-        const clientId = stateStore.getState().settings.googleClientId;
-        if (!clientId) {
-          showToast('Vui lòng nhập Google Client ID trước khi kết nối.', 'error');
-          return;
-        }
-        googleAuthService.init(clientId, async (token) => {
-          this.syncModal.open();
-        });
-        googleAuthService.signIn();
-      });
-    }
-
-    // Disconnect Google
-    const disconnectBtn = this.container.querySelector('#btn-disconnect-google');
-    if (disconnectBtn) {
-      disconnectBtn.addEventListener('click', () => {
-        googleAuthService.signOut();
-        showToast('Đã đăng xuất Google.', 'info');
-      });
-    }
-
-    // Open Sync Modal (2 Choices)
-    const openSyncBtn = this.container.querySelector('#btn-open-sync-modal');
-    if (openSyncBtn) {
-      openSyncBtn.addEventListener('click', () => {
-        this.syncModal.open();
-      });
-    }
-
-    // Quick Push
-    const quickPushBtn = this.container.querySelector('#btn-quick-push');
-    if (quickPushBtn) {
-      quickPushBtn.addEventListener('click', async () => {
-        const token = googleAuthService.getValidToken();
-        if (!token) {
-          googleAuthService.signIn();
-          return;
-        }
-        try {
-          const res = await GoogleSheetsService.push(token);
-          showToast(`Đã đẩy ${res.count} giao dịch lên Google Sheets!`, 'success');
-        } catch (e) {
-          showToast('Lỗi đẩy dữ liệu: ' + e.message, 'error');
-        }
-      });
-    }
-
-    /* Tạm thời tắt tính năng Pull Google Sheets
-    // Quick Pull
-    const quickPullBtn = this.container.querySelector('#btn-quick-pull');
-    if (quickPullBtn) {
-      quickPullBtn.addEventListener('click', async () => {
-        const ok = await confirmDialog('Thao tác này sẽ tải dữ liệu từ Google Sheets về và GHI ĐÈ dữ liệu trên máy. Bạn có chắc chắn không?', { danger: true });
-        if (!ok) return;
-        const token = googleAuthService.getValidToken();
-        if (!token) {
-          googleAuthService.signIn();
-          return;
-        }
-        try {
-          const res = await GoogleSheetsService.pull(token);
-          showToast(`Đã tải về ${res.txCount} giao dịch từ Google Sheets!`, 'success');
-        } catch (e) {
-          showToast('Lỗi kéo dữ liệu: ' + e.message, 'error');
-        }
-      });
-    }
-    */
 
     // Export JSON / CSV
     this.container.querySelector('#btn-export-json')?.addEventListener('click', () => ExportImportService.exportJSON());

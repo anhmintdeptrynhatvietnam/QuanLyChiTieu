@@ -10,7 +10,6 @@ import { Budgets } from './components/budgets.js';
 import { Analytics } from './components/analytics.js';
 import { Settings } from './components/settings.js';
 import { TransactionModal } from './components/transaction-modal.js';
-import { googleAuthService } from './services/google-auth.js';
 import { firebaseAuthService } from './services/firebase-auth.js';
 import { firebaseSyncService } from './services/firebase-sync.js';
 
@@ -65,15 +64,6 @@ class App {
     this.budgets = new Budgets('view-budgets');
     this.analytics = new Analytics('view-analytics');
     this.settings = new Settings('view-settings');
-
-    // Init Google Auth if Client ID exists
-    const clientId = stateStore.getState().settings.googleClientId;
-    if (clientId) {
-      googleAuthService.init(clientId);
-      if (googleAuthService.getValidToken()) {
-        stateStore.setSyncStatus({ status: 'connected', message: 'Đã kết nối Google' });
-      }
-    }
   }
 
   applyTheme(theme) {
@@ -159,11 +149,7 @@ class App {
     const badge = document.getElementById('sync-status-badge');
     if (badge) {
       const openSync = () => {
-        if (window.syncModal) {
-          window.syncModal.open();
-        } else {
-          this.switchView('settings');
-        }
+        this.switchView('settings');
       };
       badge.addEventListener('click', openSync);
       badge.addEventListener('keydown', (e) => {
@@ -182,7 +168,6 @@ class App {
       const state = stateStore.getState();
       const fbUser = firebaseAuthService.getCurrentUser() || state.settings?.firebaseUser;
       const fbStatus = firebaseSyncService.getStatus();
-      const isSheetsConnected = googleAuthService.getValidToken() !== null;
 
       if (fbUser && fbStatus.status === 'connected') {
         badgeEl.className = 'badge badge-income';
@@ -202,12 +187,6 @@ class App {
         badgeEl.title = fbStatus.message;
         const icon = badgeEl.querySelector('i');
         if (icon) icon.setAttribute('data-lucide', 'alert-circle');
-      } else if (isSheetsConnected) {
-        badgeEl.className = 'badge badge-income';
-        textEl.textContent = 'Google Sheets';
-        badgeEl.title = 'Google Sheets: Bấm để mở bảng đồng bộ';
-        const icon = badgeEl.querySelector('i');
-        if (icon) icon.setAttribute('data-lucide', 'table');
       } else {
         badgeEl.className = 'badge badge-subtle';
         textEl.textContent = 'Chưa kết nối Cloud';
