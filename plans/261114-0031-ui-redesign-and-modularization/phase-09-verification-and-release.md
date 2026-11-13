@@ -1,7 +1,7 @@
 ---
 phase: 9
 title: "Kiểm thử toàn bộ + release"
-status: pending
+status: completed
 dependencies: [1, 2, 3, 4, 5, 6, 7, 8]
 ---
 

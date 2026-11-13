@@ -2,8 +2,8 @@
 
 ## Lộ Trình Phát Triển Ứng Dụng Quản Lý Chi Tiêu
 
-- **Trạng thái hiện tại**: Đã hoàn thành giai đoạn tái cấu trúc cốt lõi (v2.0) và đang chuẩn bị cho đợt nâng cấp giao diện & chia tách module
-- **Kế hoạch ban đầu**: [plans/260814-1453-quan-ly-chi-tieu-fe-google-sheets/plan.md](../plans/260814-1453-quan-ly-chi-tieu-fe-google-sheets/plan.md)
+- **Trạng thái hiện tại**: Đã hoàn thành Giai đoạn 6 (Làm lại giao diện, bố cục, UX và tách module hóa)
+- **Kế hoạch thực hiện**: [plans/261114-0031-ui-redesign-and-modularization/plan.md](../plans/261114-0031-ui-redesign-and-modularization/plan.md)
 
 ---
 
@@ -68,9 +68,18 @@
 ---
 
 ### Giai Đoạn 6: Làm Lại Giao Diện (Bố Cục + UX) & Tách Module
-- [ ] **Tái thiết kế giao diện (UI redesign & UX refinement)**:
-  - Tối ưu hóa bố cục trực quan, cải thiện tương tác người dùng trên mobile và desktop.
-- [ ] **Tách nhỏ module (Modularization)**:
-  - Chia nhỏ các component hiện đang có kích thước lớn (>200 dòng) thành các sub-component và helper module chuyên biệt theo quy chuẩn code standards.
-- [ ] **Nâng cao khả năng truy cập (Accessibility & Keyboard Navigation)**:
-  - Hoàn thiện a11y cho toàn bộ modals và các luồng phím tắt.
+- [x] **Tái thiết kế giao diện (UI redesign & UX refinement)**:
+  - Khung giao diện responsive: Desktop Sidebar (≥1024px) và Mobile Bottom Navigation Bar 5 mục (Tổng quan · Giao dịch · [+] · Báo cáo · Thêm) với nút nổi FAB `+` chính giữa.
+  - Quick-add bottom sheet ghi chép giao dịch nhanh trong ~3 chạm (nhập số tiền lớn → chọn hạng mục trên lưới icon → lưu; tự động ghi nhớ loại và ví lựa chọn gần nhất).
+  - Tìm kiếm giao dịch không phân biệt dấu tiếng Việt (`normalizeVietnamese`), gom nhóm danh sách theo từng ngày kèm tổng tiền ngày và bộ lọc filter sheet chuyên sâu.
+  - Hỗ trợ 3 chế độ Theme: Sáng (Light), Tối (Dark) và Theo hệ thống (System) với chuyển đổi mượt mà.
+- [x] **Tách nhỏ module (Modularization)**:
+  - Đưa 100% file JavaScript trong toàn bộ dự án về dưới ngưỡng 200 dòng code.
+  - Xóa bỏ hoàn toàn biến toàn cục gắn trên `window.*` (`window.appInstance`, `window.transactionModal`, `window.setAppTheme`, `window.showToast`).
+  - Tách `js/state.js` thành Thin Store kết hợp với các action modules trong `js/state/*` (`transaction-actions`, `wallet-actions`, `debt-actions`, `category-budget-actions`, `cloud-session-actions`, `persistence`).
+  - Tách `js/services/firebase-sync.js` thành orchestrator kết hợp `firebase-sync-listeners.js`, `firebase-sync-ops.js`, `firebase-sync-pull.js`.
+  - Tách `js/domain/sync-diff.js` thành re-export từ `record-hash.js`, `push-diff.js`, `remote-merge.js`.
+  - Bổ sung các module pure domain độc lập (`transaction-entry.js`, `period-summary.js`, `transaction-query.js`, `budget-progress.js`, `analytics-series.js`) kèm bộ unit test toàn diện trong `tests/`.
+  - Phân tách cấu trúc CSS rõ ràng: `css/variables.css`, `css/ui.css`, `css/sheets.css`, `css/views/*.css`, `css/layouts.css`.
+- [x] **Nâng cao khả năng truy cập (Accessibility & Keyboard Navigation)**:
+  - Hoàn thiện a11y, quản lý focus trap, phím Escape và hỗ trợ phím tắt số tiền cho toàn bộ bottom sheets và confirm dialogs.

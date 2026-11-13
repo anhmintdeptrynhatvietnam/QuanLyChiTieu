@@ -64,25 +64,42 @@ and `docs/code-standards.md` — read them before non-trivial changes.
 - Entry point `index.html` loads `js/app.js` as the single module script.
   External libs (Chart.js 4.6.1, Lucide 1.72.0) load via CDN `<script>` tags,
   not npm. Firebase SDK 10.13.0 loaded lazily (`js/services/firebase-sdk.js`).
-- `js/app.js`: `App` class orchestrates view routing (`data-view` attributes),
-  theme (light/dark via `data-theme`), modal wiring, and service worker
-  registration. It instantiates one component per view from `js/components/`.
-- `js/state.js`: single `StateStore` singleton (Pub/Sub) is the source of
-  truth for `transactions`, `wallets`, `categories`, `budgets`, `debts`,
-  `settings`. Every mutating method calls `notify()`, which persists the
-  whole state to `localStorage` (via `js/services/storage.js`, keys in
-  `js/config.js` `STORAGE_KEYS`, prefixed `qlct_*`) and re-runs all
-  subscribers. The app itself does not use IndexedDB; only the Firebase SDK
-  uses IndexedDB internally for auth/cache.
+- `js/app.js`: `App` class orchestrates hash router (`#/view` via `js/ui/router.js`),
+  theme (light / dark / system via `js/ui/theme.js`), sync status subscriber,
+  action buttons, and service worker registration. It instantiates view classes
+  from `js/views/<screen>/` (`dashboard`, `transactions`, `wallets`, `debts`,
+  `budgets`, `analytics`, `settings`, `more`), each having `constructor(containerId)`
+  and `render()`, re-rendered by the router when displayed.
+- Quick-add sheet in `js/views/transaction-sheet/` (hero amount → category grid → save,
+  remembers last type/wallet) and debt modal in `js/views/debt-sheet/`.
+- No `window.*` app globals anymore.
+- Shared UI primitives in `js/ui/`: `bottom-sheet.js`, `currency-input.js`,
+  `category-grid.js`, `wallet-picker.js`, `router.js` with `#/view` hashes,
+  `sync-badge.js`, `transaction-row.js`, `theme.js`, `icons.js`.
+- CSS architecture: `css/variables.css` (design tokens, light/dark theme),
+  `css/ui.css`, `css/sheets.css`, `css/views/*.css`, and `css/layouts.css`
+  (App Shell: desktop sidebar ≥1024px, mobile 5-item bottom nav with center raised `+` button).
+- `js/state.js`: thin `StateStore` singleton (Pub/Sub) delegating action mutations
+  to `js/state/*` (`transaction-actions.js`, `wallet-actions.js`, `debt-actions.js`,
+  `category-budget-actions.js`, `cloud-session-actions.js`, `persistence.js`).
+  Every mutating action notifies subscribers, persists the state to `localStorage`
+  (via `js/services/storage.js`, keys in `js/config.js` `STORAGE_KEYS`, prefixed `qlct_*`),
+  and triggers sync if signed in. The app itself does not use IndexedDB; only the Firebase
+  SDK uses IndexedDB internally for auth/cache.
 - Wallet `currentBalance` is never mutated directly — `computeWalletBalances()`
   in `js/domain/ledger.js` derives every wallet's balance from scratch on each
   change by replaying all transactions and debts/repayments.
 - Pure domain modules in `js/domain/`: zero external imports, no DOM/storage/Firebase
-  dependencies, unit-tested via `node --test "tests/*.test.mjs"`. Includes
-  `js/domain/ledger.js` (wallet balances derived by replaying transactions + debts),
-  `debt-rules.js` (repayment rules), `sync-diff.js` (record hashing, push diff, 3-way merge, sort order),
-  `legacy-migration.js` (array-to-record mapping, deduplication),
-  `account-switch.js` (sign-in data decisions), and `settings-migration.js`.
+  dependencies, unit-tested via `node --test "tests/*.test.mjs"`. Includes:
+  - `ledger.js` (wallet balances derived by replaying transactions + debts)
+  - `debt-rules.js` (repayment rules)
+  - `sync-diff.js` (re-exports `record-hash.js`, `push-diff.js`, `remote-merge.js`)
+  - `transaction-entry.js` (validation and default resolution)
+  - `period-summary.js` (monthly totals, budget alerts, day grouping)
+  - `transaction-query.js` (accent-insensitive search, range/type/category filters, totals)
+  - `budget-progress.js` (usage percentage and alert thresholds)
+  - `analytics-series.js` (category breakdown and 6-month trends)
+  - `legacy-migration.js`, `account-switch.js`, `settings-migration.js`, `export-sanitize.js`.
 - Cloud Sync (Firebase only, Google Sheets removed):
   - Firebase SDK 10.13.0 loaded lazily via `js/services/firebase-sdk.js`.
     Default project `sothuchi-5f58e` (`js/config.js` `DEFAULT_FIREBASE_CONFIG`);
@@ -95,9 +112,10 @@ and `docs/code-standards.md` — read them before non-trivial changes.
   - Legacy layout `users/{uid}/data/{table}` (`{ items: [...] }`) is migrated
     on first sign-in after a confirm dialog and an automatic JSON backup;
     legacy docs are kept, never deleted (`js/services/firebase-migration.js`, `js/services/cloud-session.js`).
-  - Sync engine `js/services/firebase-sync.js`: realtime listeners per collection,
-    per-record baseline hashes in localStorage `qlct_sync_baseline_{uid}`, pushes
-    held until initial snapshots arrive, batched writes ≤450 ops.
+  - Sync engine `js/services/firebase-sync.js` (orchestrator) split into
+    `firebase-sync-listeners.js`, `firebase-sync-ops.js`, and `firebase-sync-pull.js`:
+    realtime listeners per collection, per-record baseline hashes in localStorage
+    `qlct_sync_baseline_{uid}`, pushes held until initial snapshots arrive, batched writes ≤450 ops.
   - Sign-in flow: different account than last time → local data replaced;
     first sign-in with data on both sides → user chooses "Dùng dữ liệu Cloud" /
     "Ghi đè Cloud" / "Gộp cả hai" (default). Settings has "Đẩy toàn bộ lên Cloud" /
@@ -113,9 +131,7 @@ and `docs/code-standards.md` — read them before non-trivial changes.
   is missing from it. Bump `CACHE_NAME` on every release. CDN libs pinned:
   lucide 1.72.0, chart.js 4.6.1 (cached at runtime in `qlct-cdn-v1`).
   Offline works only after one online visit (browser limitation).
-- Conventions (from `docs/code-standards.md`): kebab-case filenames, keep
-  files under ~200 lines (several files are larger today and will be split
-  during the upcoming UI redesign as a known exception), currency displayed
-  as Vietnamese `###.###.### ₫`, dates stored `YYYY-MM-DD` and displayed
-  `DD/MM/YYYY`, dynamic HTML escaped via `escapeHtml()`, and `try...catch`
-  around storage and Firebase operations.
+- Conventions (from `docs/code-standards.md`): kebab-case filenames, all JS
+  files strictly under 200 lines, currency displayed as Vietnamese `###.###.### ₫`,
+  dates stored `YYYY-MM-DD` and displayed `DD/MM/YYYY`, dynamic HTML escaped
+  via `escapeHtml()`, and `try...catch` around storage and Firebase operations.

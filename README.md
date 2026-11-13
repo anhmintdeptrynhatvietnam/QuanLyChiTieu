@@ -7,21 +7,23 @@
 ## 🌟 Tính Năng Nổi Bật
 
 1. **Dashboard & Thống Kê Tổng Quan**:
-   - Theo dõi nhanh Tổng số dư tài sản, Tổng Thu trong tháng, Tổng Chi trong tháng và Tiết kiệm ròng.
-   - Thống kê cơ cấu các hạng mục chi tiêu nhiều nhất.
-   - Danh sách giao dịch phát sinh gần đây.
+   - Theo dõi nhanh Tổng số dư tài sản (thẻ hero lớn), Tổng Thu trong tháng, Tổng Chi trong tháng và Tiết kiệm ròng.
+   - Cảnh báo nhanh hạn mức ngân sách và nhắc nhở sổ nợ ngay tại màn hình chính.
+   - Danh sách các giao dịch phát sinh gần đây nhất.
 
-2. **Quản Lý Giao Dịch Đa Năng**:
-   - Ghi chép nhanh: **Chi Tiêu**, **Thu Nhập** và **Chuyển Tiền** giữa các ví.
-   - Nhập liệu thông minh: Tự động format tiền tệ VNĐ, gợi ý phím tắt nhanh (+50k, +100k, +500k, +1Tr).
-   - Bộ lọc mạnh mẽ: Theo khoảng thời gian (Hôm nay, Tuần này, Tháng này, Năm nay), theo Ví, theo Hạng mục và tìm kiếm từ khóa ghi chú.
+2. **Ghi Chép Nhanh & Quản Lý Giao Dịch Đa Năng**:
+   - **Quick-add bottom sheet**: Ghi khoản chi tiêu chỉ trong ~3 chạm: Nhập số tiền lớn (hero amount) → Chạm chọn hạng mục trên lưới biểu tượng (`category-grid`) → Lưu. Tự động ghi nhớ loại giao dịch và ví đã chọn ở lần ghi trước.
+   - Hỗ trợ đầy đủ: **Chi Tiêu**, **Thu Nhập**, **Chuyển Tiền** giữa các ví và **Vay / Trả Nợ**.
+   - Nhập liệu thông minh: Tự động định dạng tiền tệ VNĐ, gợi ý phím tắt số tiền (+50k, +100k, +500k, +1Tr).
+   - **Danh sách giao dịch gom nhóm theo ngày**: Đi kèm tổng số tiền thu/chi theo từng ngày cụ thể.
+   - **Tìm kiếm & Bộ lọc mạnh mẽ**: Tìm kiếm không phân biệt dấu tiếng Việt (accent-insensitive search), lọc linh hoạt qua sheet bộ lọc theo khoảng thời gian (Hôm nay, Tuần này, Tháng này, Tháng trước, Toàn bộ), theo loại, theo Hạng mục và theo Ví.
 
 3. **Sổ Ví & Quản Lý Đa Tài Khoản**:
    - Hỗ trợ nhiều loại ví: Tiền mặt, Tài khoản Ngân hàng, Thẻ tín dụng, Sổ tiết kiệm.
    - Số dư được tính toán tự động bằng cách replay toàn bộ lịch sử giao dịch và các khoản vay/trả nợ ([js/domain/ledger.js](js/domain/ledger.js)).
 
 4. **Sổ Vay & Nợ (Debts)**:
-   - Quản lý các khoản Cho vay và Đi vay chi tiết theo từng người.
+   - Quản lý các khoản Cho vay và Đi vay chi tiết theo từng người với bottom sheet chuyên dụng ([js/views/debt-sheet/debt-sheet.js](js/views/debt-sheet/debt-sheet.js)).
    - Theo dõi tiến độ trả nợ từng phần hoặc thanh toán toàn bộ.
 
 5. **Hạn Mức Chi Tiêu & Ngân Sách (Budgets)**:
@@ -40,9 +42,9 @@
    - Khôi phục dữ liệu từ file sao lưu bất cứ lúc nào.
 
 8. **Trải Nghiệm & Giao Diện Cao Cấp (PWA)**:
-   - **Responsive hoàn hảo**: Sidebar tiện lợi trên Desktop, Bottom Navigation Bar và nút nổi FAB `+` tối ưu thao tác 1 tay trên Mobile.
-   - **Dark / Light Mode**: Tự động theo hệ điều hành hoặc chuyển đổi thủ công.
-   - **PWA Ready**: Cài đặt (Add to Home Screen) trên iPhone và Android như app native, hỗ trợ offline.
+   - **Điều hướng tối ưu**: Desktop Sidebar (≥1024px); Mobile Bottom Navigation Bar chuẩn 5 mục (Tổng quan · Giao dịch · [+] · Báo cáo · Thêm) với nút `+` nổi chính giữa tối ưu thao tác 1 tay trên điện thoại.
+   - **3 chế độ Theme**: Sáng (Light), Tối (Dark) và Theo hệ thống (System) với nút chuyển đổi nhanh và tự động thích ứng cấu hình thiết bị.
+   - **PWA Ready**: Cài đặt (Add to Home Screen) trên iOS và Android như ứng dụng native, hoạt động offline ổn định.
 
 ---
 

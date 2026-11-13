@@ -4,6 +4,40 @@ Tất cả các thay đổi quan trọng của dự án Ứng Dụng Quản Lý 
 
 ---
 
+## [2.1.0] - 2026-11-14
+
+### Thay đổi (Changed)
+- **Bố cục & Điều hướng mới (App Shell & Navigation)**:
+  - Khung giao diện responsive tối ưu: Desktop Sidebar cố định (≥1024px) và thanh điều hướng đáy mobile (Bottom Navigation Bar) đúng 5 mục: **Tổng quan · Giao dịch · [+] · Báo cáo · Thêm** với nút nổi FAB `+` chính giữa.
+  - SPA Hash Router (`js/ui/router.js`) điều hướng qua `#/view` hashes (`#/dashboard`, `#/transactions`, `#/wallets`, `#/debts`, `#/budgets`, `#/analytics`, `#/settings`, `#/more`), hỗ trợ nút Back trình duyệt và đồng bộ trạng thái active.
+- **Kiến trúc Màn hình dạng Class (`js/views/<screen>/`)**:
+  - Tách thành các màn hình độc lập trong từng thư mục chuyên biệt: `dashboard`, `transactions`, `transaction-sheet`, `debt-sheet`, `wallets`, `debts`, `budgets`, `analytics`, `settings`, `more`.
+  - Mỗi view là một class với `constructor(containerId)` và phương thức `render()`, tự động được router re-render khi màn hình được hiển thị.
+- **Hỗ trợ 3 chế độ Theme (`js/ui/theme.js`)**:
+  - Hỗ trợ đầy đủ Sáng (Light), Tối (Dark) và Theo hệ thống (System) với nút chuyển đổi nhanh trên giao diện, tự động thích ứng cấu hình hệ điều hành và cập nhật lại biểu đồ Chart.js khi đổi theme.
+
+### Đã thêm (Added)
+- **Quick-add Bottom Sheet (`js/views/transaction-sheet/`)**:
+  - Ghi chép giao dịch nhanh chỉ trong ~3 chạm: nhập số tiền lớn (hero input) → chạm chọn hạng mục trên lưới icon (`category-grid`) → bấm Lưu.
+  - Tự động ghi nhớ loại giao dịch và ví lựa chọn gần nhất (`last-entry.js`) cho lần nhập tiếp theo.
+- **Tìm kiếm không dấu & Bộ lọc nâng cao**:
+  - Tìm kiếm giao dịch không phân biệt dấu tiếng Việt (`normalizeVietnamese` trong `js/domain/transaction-query.js`).
+  - Bottom sheet bộ lọc giao dịch chuyên sâu (`transactions-filter-sheet.js`): lọc theo khoảng thời gian linh hoạt (Hôm nay, Tuần này, Tháng này, Tháng trước, Toàn bộ), theo loại thu/chi/chuyển/nợ, theo hạng mục và theo ví.
+  - Danh sách giao dịch gom nhóm trực quan theo từng ngày kèm tổng tiền ngày (`groupByDay` trong `js/domain/period-summary.js`).
+- **Tầng Pure Domain Modules mở rộng**:
+  - Bổ sung các module nghiệp vụ thuần túy có unit test 100%: `transaction-entry.js`, `period-summary.js`, `transaction-query.js`, `budget-progress.js`, `analytics-series.js`.
+
+### Nội bộ & Tái cấu trúc (Internal)
+- **Module hóa toàn diện (Modularization)**:
+  - 100% file JavaScript trong toàn bộ dự án đều < 200 dòng code.
+  - Xóa bỏ hoàn toàn mọi biến và instance toàn cục gắn trên `window.*` (`window.appInstance`, `window.transactionModal`, `window.setAppTheme`, `window.showToast`).
+  - Tách `js/state.js` thành Thin Store kết hợp với các action modules trong `js/state/*` (`transaction-actions.js`, `wallet-actions.js`, `debt-actions.js`, `category-budget-actions.js`, `cloud-session-actions.js`, `persistence.js`).
+  - Tách `js/services/firebase-sync.js` thành orchestrator kết hợp `firebase-sync-listeners.js`, `firebase-sync-ops.js`, `firebase-sync-pull.js`.
+  - Tách `js/domain/sync-diff.js` thành re-export từ `record-hash.js`, `push-diff.js`, `remote-merge.js`.
+  - Phân chia CSS rõ ràng theo trách nhiệm: `css/variables.css`, `css/ui.css`, `css/sheets.css`, `css/views/*.css`, `css/layouts.css`.
+
+---
+
 ## [2.0.0] - 2026-11-14
 
 ### Đã gỡ bỏ (Removed)
