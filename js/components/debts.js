@@ -8,6 +8,7 @@ import { attachModalA11y } from '../utils/modal-a11y.js';
 import { isAmountVisible, renderEyeButton, attachPrivacyListeners } from '../utils/privacy.js';
 import { confirmDialog } from './confirm-dialog.js';
 import { showToast } from './toast.js';
+import { canRepay, describeRepaymentError } from '../domain/debt-rules.js';
 
 export class Debts {
   constructor(containerId = 'view-debts') {
@@ -586,8 +587,10 @@ export class Debts {
     const date = document.getElementById('repayment-date').value;
     const note = document.getElementById('repayment-note').value.trim();
 
-    if (amount <= 0) {
-      showToast('Vui lòng nhập số tiền thanh toán lớn hơn 0', 'error');
+    const debt = (stateStore.getState().debts || []).find(d => d.id === this.selectedDebtId);
+    const check = canRepay(debt, amount);
+    if (!check.ok) {
+      showToast(describeRepaymentError(check, formatCurrency), 'error');
       return;
     }
 

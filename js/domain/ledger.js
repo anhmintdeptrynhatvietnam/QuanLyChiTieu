@@ -51,3 +51,21 @@ export function computeWalletBalances(wallets = [], transactions = [], debts = [
 
   return balances;
 }
+
+/**
+ * Count references to a wallet in transactions and debts.
+ *
+ * @param {string} walletId
+ * @param {{ transactions?: Array, debts?: Array }} [context={}]
+ * @returns {{ transactions: number, debts: number }}
+ */
+export function findWalletReferences(walletId, { transactions = [], debts = [] } = {}) {
+  if (!walletId) return { transactions: 0, debts: 0 };
+  const txList = transactions || [];
+  const debtList = debts || [];
+
+  const txCount = txList.filter(t => t && (t.walletId === walletId || t.toWalletId === walletId)).length;
+  const debtCount = debtList.filter(d => d && (d.walletId === walletId || (d.repayments || []).some(r => r && r.walletId === walletId))).length;
+
+  return { transactions: txCount, debts: debtCount };
+}

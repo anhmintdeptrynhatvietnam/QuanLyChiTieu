@@ -7,8 +7,8 @@ import { generateId, getCurrentDateFormatted } from './utils/helpers.js';
 import { getMonthYear } from './utils/formatters.js';
 import { firebaseAuthService } from './services/firebase-auth.js';
 import { firebaseSyncService } from './services/firebase-sync.js';
-import { computeWalletBalances } from './domain/ledger.js';
-import { applyRepayment } from './domain/debt-rules.js';
+import { computeWalletBalances, findWalletReferences } from './domain/ledger.js';
+import { applyRepayment, canRepay } from './domain/debt-rules.js';
 import { sanitizeLegacySettings } from './domain/settings-migration.js';
 
 class StateStore {
@@ -188,10 +188,17 @@ class StateStore {
     const index = this.state.transactions.findIndex(t => t.id === id);
     if (index === -1) return null;
 
+    let amount = this.state.transactions[index].amount;
+    if (Object.prototype.hasOwnProperty.call(updatedData, 'amount')) {
+      const parsedAmount = Number(updatedData.amount);
+      if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return null;
+      amount = parsedAmount;
+    }
+
     this.state.transactions[index] = {
       ...this.state.transactions[index],
       ...updatedData,
-      amount: Number(updatedData.amount) || this.state.transactions[index].amount,
+      amount,
       updatedAt: new Date().toISOString()
     };
 
@@ -244,10 +251,12 @@ class StateStore {
   }
 
   deleteWallet(id) {
-    const hasTransactions = this.state.transactions.some(t => t.walletId === id || t.toWalletId === id);
-    if (hasTransactions) return { success: false, reason: 'Ví đã có giao dịch, không thể xóa' };
+    const refs = findWalletReferences(id, this.state);
+    if (refs.transactions > 0) return { success: false, reason: 'Ví đã có giao dịch, không thể xóa' };
+    if (refs.debts > 0) return { success: false, reason: 'Ví đang được dùng trong khoản vay/nợ hoặc lần trả nợ, không thể xóa' };
 
     this.state.wallets = this.state.wallets.filter(w => w.id !== id);
+    this.recalculateWalletBalances();
     this.notify('wallet:deleted', id);
     return { success: true };
   }
@@ -316,8 +325,10 @@ class StateStore {
     const debt = this.state.debts.find(d => d.id === debtId);
     if (!debt) return null;
 
-    const repayAmount = Number(amount) || 0;
-    if (repayAmount <= 0) return null;
+    const check = canRepay(debt, amount);
+    if (!check.ok) return null;
+
+    const repayAmount = Number(amount);
 
     const repayment = {
       id: generateId('rep'),
@@ -386,6 +397,15 @@ class StateStore {
     }
 
     this.notify('budget:updated', { categoryId, month: monthStr });
+  }
+
+  deleteBudget(categoryId, month) {
+    const initialLength = this.state.budgets.length;
+    this.state.budgets = this.state.budgets.filter(b => !(b.categoryId === categoryId && b.month === month));
+    if (this.state.budgets.length === initialLength) return false;
+
+    this.notify('budget:deleted', { categoryId, month });
+    return true;
   }
 
   // --- Settings & Bulk Data Import ---

@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Toàn vẹn sổ tiền"
-status: pending
+status: completed
 priority: P1
 effort: "0.5d"
 dependencies: [1]
@@ -36,8 +36,13 @@ Sửa các lỗi làm lệch số dư/nợ trong `state.js` và form trả nợ,
 4. Cập nhật UI debts/budgets/wallets.
 
 ## Success Criteria
-- [ ] `node --test "tests/*.test.mjs"` xanh với test cho: xoá ví có nợ, trả quá số còn lại, trả khoản đã paid, sửa amount nợ, xoá ngân sách, sửa giao dịch amount 0.
-- [ ] Smoke test bước 1, 2, 3 pass.
+- [x] `node --test "tests/*.test.mjs"` xanh (49 test) với test domain cho: tham chiếu ví (giao dịch/nợ/lần trả), trả quá số còn lại, trả khoản đã paid, `remainingAmount = 0` không còn fallback. `deleteBudget` và `updateTransaction` amount 0 nằm trong `state.js` (Node chưa import được do Firebase CDN) → kiểm bằng browser, test Node sẽ có sau Phase 04.
+- [x] Smoke test bước 1, 2, 3 pass (browser 2026-11-13: trả quá → toast "Số tiền vượt quá số còn nợ (300.000 ₫)", không ghi; xoá ví có nợ/lần trả → bị chặn; xoá hạn mức qua UI + confirm dialog → hết record).
+
+## Kết quả & điều chỉnh phạm vi
+- Bỏ yêu cầu "`updateDebt` sửa amount → tính lại remaining": UI không cho sửa amount (`debts.js` chỉ cập nhật `personName`, `dueDate`, `note`).
+- `describeRepaymentError(check, formatAmount)` đặt trong `debt-rules.js`, nhận formatter làm tham số để domain vẫn không import gì; dùng chung cho `debts.js` và `transaction-modal.js`.
+- Đã biết: nút "Xóa hạn mức" ẩn/hiện theo tháng lúc mở modal; đổi ô tháng trong modal rồi xoá tháng không có hạn mức → không làm gì (không lỗi).
 
 ## Risk Assessment
 - Dữ liệu cũ đã có repayment vượt số nợ → sau khi chặn, dữ liệu cũ vẫn hiển thị (không tự sửa dữ liệu). Signal: `remainingAmount` âm hoặc tổng repayments > amount trong dữ liệu thật → chỉ hiển thị cảnh báo, không migrate tự động.

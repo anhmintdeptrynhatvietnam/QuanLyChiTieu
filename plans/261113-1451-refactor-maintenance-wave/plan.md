@@ -28,7 +28,7 @@ Sửa các lỗi mất dữ liệu/lệch sổ tiền, bỏ Google Sheets, chuy�
 |---|---|---|---|---|---|
 | 01 | [Test harness + tách domain thuần](phase-01-test-harness-and-domain-extraction.md) | completed | — | 0.5d | agy medium |
 | 02 | [Gỡ Google Sheets](phase-02-remove-google-sheets.md) | completed | 01 | 0.5d | agy medium |
-| 03 | [Toàn vẹn sổ tiền](phase-03-ledger-integrity.md) | pending | 01 | 0.5d | agy medium |
+| 03 | [Toàn vẹn sổ tiền](phase-03-ledger-integrity.md) | completed | 01 | 0.5d | agy medium |
 | 04 | [Firestore 1 doc/bản ghi + sync engine mới + rules](phase-04-firestore-per-record-sync.md) | pending | 01, 02 | 1.5d | agy high + Claude review rules |
 | 05 | [Migration cloud cũ + đổi tài khoản](phase-05-cloud-migration-and-account-switch.md) | pending | 04 | 1d | Claude trực tiếp (thao tác dữ liệu) |
 | 06 | [Offline/PWA](phase-06-offline-pwa.md) | pending | 04 | 0.5d | agy medium |

@@ -5,6 +5,7 @@ import { stateStore } from '../state.js';
 import { formatCurrency, formatNumber, parseFormattedNumber, getMonthYear, formatMonthYearDisplay } from '../utils/formatters.js';
 import { escapeHtml } from '../utils/helpers.js';
 import { attachModalA11y } from '../utils/modal-a11y.js';
+import { confirmDialog } from './confirm-dialog.js';
 
 export class Budgets {
   constructor(containerId = 'view-budgets') {
@@ -54,6 +55,10 @@ export class Budgets {
             </div>
 
             <div class="flex gap-3 justify-between" style="margin-top: var(--space-6);">
+              <button type="button" class="btn btn-secondary" id="btn-delete-budget" style="display: none;">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                <span>Xóa hạn mức</span>
+              </button>
               <button type="button" class="btn btn-secondary" id="btn-cancel-budget">Hủy</button>
               <button type="submit" class="btn btn-primary" style="flex: 1;">Lưu Ngân Sách</button>
             </div>
@@ -170,11 +175,23 @@ export class Budgets {
   bindEvents() {
     const closeBtn = document.getElementById('btn-close-budget-modal');
     const cancelBtn = document.getElementById('btn-cancel-budget');
+    const deleteBtn = document.getElementById('btn-delete-budget');
     const form = document.getElementById('budget-form');
     const limitInput = document.getElementById('budget-limit-amount');
 
     closeBtn.addEventListener('click', () => this.closeModal());
     cancelBtn.addEventListener('click', () => this.closeModal());
+
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', async () => {
+        const confirmed = await confirmDialog('Xóa hạn mức của hạng mục này trong tháng đã chọn?', { danger: true });
+        if (confirmed) {
+          const month = document.getElementById('budget-month').value;
+          stateStore.deleteBudget(this.activeCategoryId, month);
+          this.closeModal();
+        }
+      });
+    }
 
     this.modalEl.addEventListener('click', (e) => {
       if (e.target === this.modalEl) this.closeModal();
@@ -222,6 +239,11 @@ export class Budgets {
     document.getElementById('budget-cat-name').value = cat?.name || '';
     document.getElementById('budget-month').value = this.selectedMonth;
     document.getElementById('budget-limit-amount').value = existingBudget ? formatNumber(existingBudget.limitAmount) : '';
+
+    const deleteBtn = document.getElementById('btn-delete-budget');
+    if (deleteBtn) {
+      deleteBtn.style.display = existingBudget ? '' : 'none';
+    }
 
     this.modalEl.classList.add('active');
     setTimeout(() => document.getElementById('budget-limit-amount').focus(), 150);

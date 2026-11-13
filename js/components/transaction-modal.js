@@ -2,11 +2,12 @@
  * Transaction Modal Component (Add / Edit / Transfer)
  */
 import { stateStore } from '../state.js';
-import { formatNumber, parseFormattedNumber } from '../utils/formatters.js';
+import { formatCurrency, formatNumber, parseFormattedNumber } from '../utils/formatters.js';
 import { getCurrentDateFormatted, escapeHtml } from '../utils/helpers.js';
 import { showToast } from './toast.js';
 import { attachModalA11y } from '../utils/modal-a11y.js';
 import { promptDialog } from './confirm-dialog.js';
+import { canRepay, describeRepaymentError } from '../domain/debt-rules.js';
 
 export class TransactionModal {
   constructor() {
@@ -445,6 +446,14 @@ export class TransactionModal {
           showToast('Vui lòng chọn khoản nợ cần thanh toán', 'error');
           return;
         }
+
+        const debt = (stateStore.getState().debts || []).find(d => d.id === selectedDebtId);
+        const check = canRepay(debt, amount);
+        if (!check.ok) {
+          showToast(describeRepaymentError(check, formatCurrency), 'error');
+          return;
+        }
+
         stateStore.recordRepayment(selectedDebtId, {
           amount,
           walletId,

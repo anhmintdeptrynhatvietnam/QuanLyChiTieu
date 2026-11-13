@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeWalletBalances } from '../js/domain/ledger.js';
+import { computeWalletBalances, findWalletReferences } from '../js/domain/ledger.js';
 
 describe('computeWalletBalances', () => {
   it('handles empty inputs', () => {
@@ -125,5 +125,64 @@ describe('computeWalletBalances', () => {
     const wallets = [{ id: 'w1', initialBalance: 500 }];
     assert.deepEqual(computeWalletBalances(wallets, [], null), { w1: 500 });
     assert.deepEqual(computeWalletBalances(wallets, [], undefined), { w1: 500 });
+  });
+});
+
+describe('findWalletReferences', () => {
+  it('counts transaction from (walletId)', () => {
+    const transactions = [
+      { id: 't1', walletId: 'w1', amount: 100 }
+    ];
+    const refs = findWalletReferences('w1', { transactions, debts: [] });
+    assert.deepEqual(refs, { transactions: 1, debts: 0 });
+  });
+
+  it('counts transaction to (toWalletId)', () => {
+    const transactions = [
+      { id: 't1', walletId: 'w2', toWalletId: 'w1', type: 'transfer', amount: 100 }
+    ];
+    const refs = findWalletReferences('w1', { transactions, debts: [] });
+    assert.deepEqual(refs, { transactions: 1, debts: 0 });
+  });
+
+  it('counts debt wallet (walletId)', () => {
+    const debts = [
+      { id: 'd1', walletId: 'w1', amount: 500 }
+    ];
+    const refs = findWalletReferences('w1', { transactions: [], debts });
+    assert.deepEqual(refs, { transactions: 0, debts: 1 });
+  });
+
+  it('counts repayment wallet (repayment.walletId)', () => {
+    const debts = [
+      {
+        id: 'd1',
+        walletId: 'w2',
+        amount: 500,
+        repayments: [
+          { id: 'r1', walletId: 'w1', amount: 200 }
+        ]
+      }
+    ];
+    const refs = findWalletReferences('w1', { transactions: [], debts });
+    assert.deepEqual(refs, { transactions: 0, debts: 1 });
+  });
+
+  it('returns zeros when wallet is not referenced anywhere', () => {
+    const transactions = [
+      { id: 't1', walletId: 'w2', amount: 100 }
+    ];
+    const debts = [
+      { id: 'd1', walletId: 'w2', repayments: [{ walletId: 'w2', amount: 50 }] }
+    ];
+    const refs = findWalletReferences('w1', { transactions, debts });
+    assert.deepEqual(refs, { transactions: 0, debts: 0 });
+  });
+
+  it('tolerates null, undefined, or empty arrays', () => {
+    assert.deepEqual(findWalletReferences('w1', { transactions: null, debts: null }), { transactions: 0, debts: 0 });
+    assert.deepEqual(findWalletReferences('w1', {}), { transactions: 0, debts: 0 });
+    assert.deepEqual(findWalletReferences('w1'), { transactions: 0, debts: 0 });
+    assert.deepEqual(findWalletReferences(null), { transactions: 0, debts: 0 });
   });
 });
