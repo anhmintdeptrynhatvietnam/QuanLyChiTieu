@@ -4,6 +4,7 @@
 import { stateStore } from '../../state.js';
 import { firebaseAuthService } from '../../services/firebase-auth.js';
 import { firebaseSyncService } from '../../services/firebase-sync.js';
+import { ExportImportService } from '../../services/export-import.js';
 import { showToast } from '../../components/toast.js';
 import { confirmDialog } from '../../components/confirm-dialog.js';
 import { escapeHtml } from '../../utils/helpers.js';
@@ -124,12 +125,16 @@ export function bindAccountEvents(container) {
 
   // Push All
   container.querySelector('#btn-firebase-push-all')?.addEventListener('click', async () => {
-    const ok = await confirmDialog('Thao tác này sẽ tải toàn bộ dữ liệu từ thiết bị này lên Cloud và GHI ĐÈ dữ liệu trên Cloud. Bạn có chắc chắn không?', {
-      title: 'Đẩy toàn bộ lên Cloud',
-      confirmText: 'Đẩy lên ngay'
+    const ok = await confirmDialog('Dữ liệu Cloud sẽ bị THAY THẾ hoàn toàn bằng dữ liệu trên thiết bị này, kể cả các khoản ghi từ thiết bị khác. Ứng dụng sẽ tải về file sao lưu dữ liệu Cloud hiện tại trước khi ghi đè. Bạn có chắc chắn không?', {
+      title: 'Ghi đè dữ liệu Cloud',
+      confirmText: 'Sao lưu & ghi đè',
+      danger: true
     });
     if (!ok) return;
     try {
+      // Never overwrite the cloud without a restorable copy of what is there now.
+      const cloudData = await firebaseSyncService.pullAllData();
+      ExportImportService.downloadJSON(cloudData, 'QuanLyChiTieu_CloudBackup');
       await firebaseSyncService.pushAllData(stateStore.getState());
       showToast('Đã tải toàn bộ dữ liệu lên Cloud thành công!', 'success');
     } catch (err) {

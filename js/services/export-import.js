@@ -8,13 +8,21 @@ import { getCurrentDateFormatted } from '../utils/helpers.js';
 
 export class ExportImportService {
   static exportJSON() {
-    const state = sanitizeForExport(stateStore.getState(), DEFAULT_FIREBASE_CONFIG);
-    const jsonStr = JSON.stringify(state, null, 2);
+    ExportImportService.downloadJSON(stateStore.getState(), 'QuanLyChiTieu_Backup');
+  }
+
+  /**
+   * Download any state-shaped object ({ transactions, wallets, ... }) as an importable JSON backup.
+   * @param {Object} data
+   * @param {string} filePrefix
+   */
+  static downloadJSON(data, filePrefix) {
+    const jsonStr = JSON.stringify(sanitizeForExport(data, DEFAULT_FIREBASE_CONFIG), null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', url);
-    downloadAnchor.setAttribute('download', `QuanLyChiTieu_Backup_${getCurrentDateFormatted()}.json`);
+    downloadAnchor.setAttribute('download', `${filePrefix}_${getCurrentDateFormatted()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

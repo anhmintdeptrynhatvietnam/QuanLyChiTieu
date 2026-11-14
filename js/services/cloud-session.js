@@ -60,21 +60,16 @@ export async function prepareCloudSession({ uid, getState, replaceLocal, ui = HE
   if (decision === 'reset-local') {
     replaceWithFresh(cloudHasData);
   } else if (decision === 'ask-user') {
-    const useCloud = await ui.confirm(
-      'Thiết bị này và Cloud đều đang có dữ liệu. Chọn "Dùng dữ liệu Cloud" để thay dữ liệu trên máy bằng dữ liệu Cloud ' +
-      '(hệ thống sẽ tải về file sao lưu dữ liệu trên máy trước).',
-      { title: 'Chọn dữ liệu để sử dụng', confirmText: 'Dùng dữ liệu Cloud', cancelText: 'Lựa chọn khác' }
+    // First sign-in on a device that already holds data. The device copy is often stale
+    // (an old browser cache), so the cloud wins by default and nothing here can overwrite
+    // the cloud. The device data is always downloaded as a backup first.
+    ui.backupLocal();
+    const merge = await ui.confirm(
+      'Thiết bị này và Cloud đều đang có dữ liệu. Ứng dụng sẽ dùng dữ liệu trên Cloud (đã tải về file sao lưu dữ liệu cũ trên máy này). ' +
+      'Chỉ chọn "Gộp dữ liệu máy này" nếu máy này có khoản ghi mới chưa từng đồng bộ — các khoản đã xoá ở máy khác có thể xuất hiện lại.',
+      { title: 'Dùng dữ liệu Cloud', confirmText: 'Gộp dữ liệu máy này', cancelText: 'Dùng dữ liệu Cloud' }
     );
-    if (useCloud) {
-      ui.backupLocal();
-      replaceWithFresh(true);
-    } else {
-      const overwrite = await ui.confirm(
-        'Ghi đè TOÀN BỘ dữ liệu Cloud bằng dữ liệu trên máy này? Chọn "Gộp cả hai" để giữ dữ liệu của cả hai bên.',
-        { title: 'Ghi đè dữ liệu Cloud?', confirmText: 'Ghi đè Cloud', cancelText: 'Gộp cả hai', danger: true }
-      );
-      if (overwrite) await firebaseSyncService.pushAllData(getState(), uid);
-    }
+    if (!merge) replaceWithFresh(true);
   }
 
   StorageService.set(LAST_AUTH_UID_KEY, uid);

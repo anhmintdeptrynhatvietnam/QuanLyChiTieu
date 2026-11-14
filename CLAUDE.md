@@ -117,8 +117,10 @@ and `docs/code-standards.md` — read them before non-trivial changes.
     realtime listeners per collection, per-record baseline hashes in localStorage
     `qlct_sync_baseline_{uid}`, pushes held until initial snapshots arrive, batched writes ≤450 ops.
   - Sign-in flow: different account than last time → local data replaced;
-    first sign-in with data on both sides → user chooses "Dùng dữ liệu Cloud" /
-    "Ghi đè Cloud" / "Gộp cả hai" (default). Settings has "Đẩy toàn bộ lên Cloud" /
+    first sign-in with data on both sides → device data is downloaded as a JSON
+    backup, then cloud data is used (default) or merged; the sign-in flow can never
+    overwrite the cloud. Settings has "Đẩy toàn bộ lên Cloud" (downloads a cloud
+    backup before overwriting) /
     "Kéo toàn bộ về máy" when signed in. Known limitation: importing a JSON
     backup while signed in makes the cloud match the file (cloud records missing
     from the file are deleted).

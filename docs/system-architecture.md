@@ -175,8 +175,8 @@ Khi người dùng thực hiện đăng nhập qua Google hoặc Ẩn danh:
    - Nếu dữ liệu đang ở định dạng cũ (`state === 'legacy'`), hiển thị thông báo yêu cầu nâng cấp, tự động backup JSON và chuyển đổi dữ liệu.
 3. So sánh UID vừa đăng nhập với UID của lần đăng nhập trước (`qlct_last_auth_uid`):
    - **Tài khoản khác nhau**: Xóa dữ liệu local hiện tại và thay thế bằng dữ liệu mới tinh (hoặc dữ liệu từ Cloud) để tránh lẫn lộn dữ liệu giữa 2 tài khoản.
-   - **Cùng tài khoản nhưng cả hai phía đều có dữ liệu mới**: Hệ thống đưa ra lựa chọn:
-     - *"Dùng dữ liệu Cloud"*: Tải backup máy về rồi thay thế dữ liệu trên máy bằng dữ liệu Cloud.
-     - *"Ghi đè Cloud"*: Ghi đè toàn bộ dữ liệu trên máy lên Cloud.
-     - *"Gộp cả hai"* (Mặc định): Giữ nguyên dữ liệu cả hai bên và tiến hành merge 3-way.
+   - **Lần đầu đăng nhập trên thiết bị, cả hai phía đều có dữ liệu**: luôn tải file sao lưu dữ liệu của thiết bị trước, rồi:
+     - *"Dùng dữ liệu Cloud"* (Mặc định, kể cả khi đóng hộp thoại): thay dữ liệu trên máy bằng dữ liệu Cloud.
+     - *"Gộp dữ liệu máy này"*: merge 3-way; bản ghi trùng id lấy theo Cloud, bản ghi chỉ có trên máy được đẩy lên (có thể làm hiện lại khoản đã xoá ở máy khác).
+     - Không có lựa chọn ghi đè Cloud trong luồng đăng nhập: máy còn dữ liệu cũ (cache trình duyệt) không thể thay thế dữ liệu mới trên Cloud. Ghi đè chỉ làm được bằng nút "Đẩy toàn bộ lên Cloud" trong Cài đặt, nút này tải file sao lưu dữ liệu Cloud trước khi ghi.
 4. Bắt đầu lắng nghe realtime sync và lưu `qlct_last_auth_uid`.

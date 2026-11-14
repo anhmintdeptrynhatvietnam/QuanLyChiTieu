@@ -4,6 +4,12 @@ Tất cả các thay đổi quan trọng của dự án Ứng Dụng Quản Lý 
 
 ---
 
+## [2.1.4] - 2026-11-14
+
+### Sửa lỗi (Fixed)
+- **Máy có dữ liệu cũ ghi đè Cloud**: lần đầu đăng nhập trên một thiết bị mà cả thiết bị và Cloud đều có dữ liệu, hộp thoại cũ có lựa chọn "Ghi đè Cloud" — chọn nhầm trên một máy còn dữ liệu cũ (cache trình duyệt) sẽ thay toàn bộ Cloud bằng dữ liệu cũ, xoá các khoản mới ghi ở máy khác, và máy khác nhận lại dữ liệu cũ đó. Nay luồng đăng nhập luôn tải file sao lưu dữ liệu của thiết bị trước, mặc định dùng dữ liệu Cloud, và không còn lựa chọn ghi đè Cloud ([js/services/cloud-session.js](../js/services/cloud-session.js)).
+- **"Đẩy toàn bộ lên Cloud"** (Cài đặt) tự tải về file `QuanLyChiTieu_CloudBackup_….json` chứa dữ liệu Cloud hiện tại trước khi ghi đè; file này nhập lại được bằng "Khôi phục File (.json)".
+
 ## [2.1.3] - 2026-11-14
 
 ### Thay đổi (Changed)
