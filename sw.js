@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.24';
+const CACHE_NAME = 'qlct-pwa-v2.25';
 const CDN_CACHE = 'qlct-cdn-v1';
 
 const CDN_HOSTS = new Set([
@@ -43,7 +43,6 @@ const ASSETS_TO_CACHE = [
   './js/domain/analytics-series.js',
   './js/domain/balance-reconcile.js',
   './js/domain/budget-progress.js',
-  './js/domain/category-usage.js',
   './js/domain/debt-rules.js',
   './js/domain/export-sanitize.js',
   './js/domain/ledger.js',
@@ -57,6 +56,7 @@ const ASSETS_TO_CACHE = [
   './js/domain/sync-diff.js',
   './js/domain/transaction-entry.js',
   './js/domain/transaction-query.js',
+  './js/domain/usage-ranking.js',
   './js/services/cloud-session.js',
   './js/services/export-import.js',
   './js/services/firebase-auth.js',

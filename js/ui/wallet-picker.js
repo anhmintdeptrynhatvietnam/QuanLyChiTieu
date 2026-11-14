@@ -1,6 +1,7 @@
 /**
  * Wallet Picker Component
- * Horizontal scrollable chips for selecting a wallet/account.
+ * Chips for selecting a wallet/account: one horizontally scrollable row, or
+ * wrapped onto several rows (`wrap`) so every wallet is visible without swiping.
  * Respects privacy masking via js/utils/privacy.js.
  */
 import { formatCurrency } from '../utils/formatters.js';
@@ -15,6 +16,7 @@ import { isAmountVisible } from '../utils/privacy.js';
  * @param {Function} [options.onSelect] - (walletId, walletObj) => void
  * @param {string|number|null} [options.excludeId] - wallet id to exclude from selection
  * @param {boolean} [options.showBalance=true]
+ * @param {boolean} [options.wrap=false]
  * @returns {HTMLElement}
  */
 export function renderWalletPicker({
@@ -22,10 +24,11 @@ export function renderWalletPicker({
   selectedId = null,
   onSelect = null,
   excludeId = null,
-  showBalance = true
+  showBalance = true,
+  wrap = false
 } = {}) {
   const container = document.createElement('div');
-  container.className = 'wallet-picker';
+  container.className = `wallet-picker${wrap ? ' wallet-picker-wrap' : ''}`;
   container.setAttribute('role', 'radiogroup');
   container.setAttribute('aria-label', 'Chọn ví hoặc tài khoản');
 

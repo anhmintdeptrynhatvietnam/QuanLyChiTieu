@@ -484,3 +484,20 @@
   color: var(--primary-500);
   font-weight: 600;
 }
+
+/* Wallet chips wrapped onto rows: every wallet visible, no sideways swipe */
+.wallet-picker-wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  touch-action: auto;
+}
+
+.wallet-picker-wrap .wallet-chip {
+  max-width: 100%;
+}
+
+.wallet-picker-wrap .wallet-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

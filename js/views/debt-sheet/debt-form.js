@@ -47,6 +47,8 @@ export function renderDebtForm({ action = 'lend', debtId = null, onDone = null }
     slot.innerHTML = '';
     slot.appendChild(renderWalletPicker({
       wallets: state.wallets,
+      wrap: true,
+      showBalance: false,
       selectedId: selectedWalletId,
       onSelect: (wId) => { selectedWalletId = wId; }
     }));

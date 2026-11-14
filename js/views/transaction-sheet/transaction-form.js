@@ -9,7 +9,7 @@ import { showToast } from '../../components/toast.js';
 import { confirmDialog } from '../../components/confirm-dialog.js';
 import { attachCurrencyInput, getCurrencyValue } from '../../ui/currency-input.js';
 import { renderCategoryGrid } from '../../ui/category-grid.js';
-import { rankCategoriesByUsage } from '../../domain/category-usage.js';
+import { rankCategoriesByUsage, rankWalletsByUsage } from '../../domain/usage-ranking.js';
 import { renderWalletPicker } from '../../ui/wallet-picker.js';
 import { refreshIcons } from '../../ui/icons.js';
 import { resolveEntryDefaults } from '../../domain/transaction-entry.js';
@@ -26,7 +26,8 @@ export function renderTransactionForm({ txId = null, type = null, walletId = nul
 
   const defaults = resolveEntryDefaults({
     lastEntry: getLastEntry(),
-    wallets: state.wallets,
+    // With no remembered wallet, default to the most used one.
+    wallets: rankWalletsByUsage(state.wallets, state.transactions, getCurrentDateFormatted()),
     params: { type: existingTx?.type || type, walletId: existingTx?.walletId || walletId }
   });
 
@@ -82,8 +83,11 @@ export function renderTransactionForm({ txId = null, type = null, walletId = nul
 
     const wSlot = container.querySelector('#tx-wallet-picker-slot');
     wSlot.innerHTML = '';
+    const rankedWallets = rankWalletsByUsage(state.wallets, state.transactions, getCurrentDateFormatted());
     wSlot.appendChild(renderWalletPicker({
-      wallets: state.wallets,
+      wallets: rankedWallets,
+      wrap: true,
+      showBalance: false,
       selectedId: currentWalletId,
       onSelect: (wId) => { currentWalletId = wId; if (isTransfer) syncUI(); }
     }));
@@ -92,7 +96,9 @@ export function renderTransactionForm({ txId = null, type = null, walletId = nul
       const toSlot = container.querySelector('#tx-to-wallet-picker-slot');
       toSlot.innerHTML = '';
       toSlot.appendChild(renderWalletPicker({
-        wallets: state.wallets,
+        wallets: rankedWallets,
+        wrap: true,
+        showBalance: false,
         selectedId: currentToWalletId,
         excludeId: currentWalletId,
         onSelect: (wId) => { currentToWalletId = wId; }

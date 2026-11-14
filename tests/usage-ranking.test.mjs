@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { rankCategoriesByUsage } from '../js/domain/category-usage.js';
+import { rankCategoriesByUsage, rankWalletsByUsage } from '../js/domain/usage-ranking.js';
 
 const cats = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }];
 const ids = (list) => list.map(c => c.id);
@@ -36,5 +36,24 @@ describe('rankCategoriesByUsage', () => {
     const input = [...cats];
     rankCategoriesByUsage(input, [{ categoryId: 'd', date: '2026-11-14' }], '2026-11-14');
     assert.deepEqual(ids(input), ['a', 'b', 'c', 'd']);
+  });
+});
+
+describe('rankWalletsByUsage', () => {
+  const wallets = [{ id: 'cash' }, { id: 'bank' }, { id: 'card' }, { id: 'save' }, { id: 'salary' }];
+
+  it('puts the most used wallets first, counting both sides of a transfer', () => {
+    const tx = [
+      { walletId: 'salary', date: '2026-11-10' },
+      { walletId: 'salary', date: '2026-11-11' },
+      { walletId: 'bank', toWalletId: 'card', date: '2026-11-12' },
+      { walletId: 'card', date: '2026-11-13' }
+    ];
+    assert.deepEqual(rankWalletsByUsage(wallets, tx, '2026-11-14').map(w => w.id), ['card', 'salary', 'bank', 'cash', 'save']);
+  });
+
+  it('counts a transfer to the same wallet once', () => {
+    const tx = [{ walletId: 'save', toWalletId: 'save', date: '2026-11-14' }, { walletId: 'bank', date: '2026-11-14' }, { walletId: 'bank', date: '2026-11-13' }];
+    assert.deepEqual(rankWalletsByUsage(wallets, tx, '2026-11-14').map(w => w.id), ['bank', 'save', 'cash', 'card', 'salary']);
   });
 });

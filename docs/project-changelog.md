@@ -4,10 +4,15 @@ Tất cả các thay đổi quan trọng của dự án Ứng Dụng Quản Lý 
 
 ---
 
+## [2.1.8] - 2026-11-15
+
+### Thay đổi (Changed)
+- **Chọn nguồn tiền không cần vuốt**: trong form ghi giao dịch và vay/nợ, mọi ví hiện cùng lúc (xuống dòng, chip chỉ có tên); ví dùng nhiều nhất trong 90 ngày đứng đầu và được chọn sẵn khi chưa có lựa chọn lần trước ([js/domain/usage-ranking.js](../js/domain/usage-ranking.js)).
+
 ## [2.1.7] - 2026-11-14
 
 ### Thay đổi (Changed)
-- **Form ghi giao dịch gọn hơn**: chọn ví/nguồn tiền nằm ngay dưới số tiền; lưới hạng mục thu nhỏ (5 cột, tên 1 dòng), chỉ hiện 2 hàng với các hạng mục dùng nhiều nhất trong 90 ngày ([js/domain/category-usage.js](../js/domain/category-usage.js)) và ô "Xem tất cả" để mở hết; hạng mục đang chọn luôn hiện.
+- **Form ghi giao dịch gọn hơn**: chọn ví/nguồn tiền nằm ngay dưới số tiền; lưới hạng mục thu nhỏ (5 cột, tên 1 dòng), chỉ hiện 2 hàng với các hạng mục dùng nhiều nhất trong 90 ngày ([js/domain/usage-ranking.js](../js/domain/usage-ranking.js)) và ô "Xem tất cả" để mở hết; hạng mục đang chọn luôn hiện.
 
 ## [2.1.6] - 2026-11-14
 
