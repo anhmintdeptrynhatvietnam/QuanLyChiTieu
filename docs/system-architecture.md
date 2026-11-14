@@ -152,7 +152,7 @@ Thư mục [js/domain/](../js/domain/) gồm các module nghiệp vụ thuần t
   - [firebase-sync-ops.js](../js/services/firebase-sync-ops.js): Thực hiện đợt đẩy dữ liệu (`flushSync`) và đẩy toàn bộ dữ liệu (`pushAllData`) theo lô ≤ 450 thao tác/lần.
   - [firebase-sync-pull.js](../js/services/firebase-sync-pull.js): Kéo toàn bộ dữ liệu từ Cloud (`pullAllData`) và kiểm tra dữ liệu hiện có của tài khoản.
   - Lưu trữ baseline hash của từng bản ghi vào `localStorage` theo khóa `qlct_sync_baseline_{uid}` để phát hiện chính xác thay đổi 3 chiều (local changes vs remote changes).
-  - Trì hoãn việc đẩy dữ liệu lên Cloud cho đến khi nhận đủ snapshot ban đầu từ tất cả collections để tránh ghi đè dữ liệu trên Cloud bằng dữ liệu mặc định local.
+  - Trì hoãn việc đẩy dữ liệu lên Cloud cho đến khi mọi collection đã gộp một snapshot **được máy chủ xác nhận** (bỏ qua snapshot từ bộ nhớ tạm của Firestore trên thiết bị, xem `js/domain/snapshot-changes.js`), để thiết bị có dữ liệu cũ không ghi đè dữ liệu mới trên Cloud.
   - Hỗ trợ thao tác thủ công "Đẩy toàn bộ lên Cloud" và "Kéo toàn bộ về máy" từ giao diện Cài đặt.
   - *Hạn chế đã biết*: Khi đang đăng nhập Cloud, nếu người dùng nhập (import) một file sao lưu JSON thì dữ liệu Cloud sẽ được đồng bộ khớp với file đó (những bản ghi trên Cloud không có trong file JSON sẽ bị xóa khỏi Cloud).
 - **Quy tắc bảo mật** ([firestore.rules](../firestore.rules)):
