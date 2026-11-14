@@ -10,6 +10,7 @@ import {
   settingsToRecord,
   mergeRemoteChanges
 } from '../domain/sync-diff.js';
+import { interpretSnapshot } from '../domain/snapshot-changes.js';
 
 export const DEFAULT_ORDER = {
   wallets: DEFAULT_WALLETS.map(w => w.id),
@@ -55,14 +56,12 @@ export async function startSync(service, userId, options) {
       const colRef = fs.collection(db, 'users', userId, col);
       let isInitial = true;
 
-      const unsub = fs.onSnapshot(colRef, { includeMetadataChanges: false }, (snapshot) => {
+      // Metadata changes are needed to be told when the server confirms a snapshot that
+      // Firestore first served from its on-device cache (see interpretSnapshot).
+      const unsub = fs.onSnapshot(colRef, { includeMetadataChanges: true }, (snapshot) => {
         try {
-          const cloudIds = isInitial ? new Set(snapshot.docs.map(d => d.id)) : null;
-          const changes = snapshot.docChanges().map(change => ({
-            type: change.type, // 'added' | 'modified' | 'removed'
-            id: change.doc.id,
-            data: change.type === 'removed' ? undefined : fromCloudRecord(change.doc.data())
-          }));
+          const { skip, changes, cloudIds } = interpretSnapshot({ snapshot, isInitial, decode: fromCloudRecord });
+          if (skip) return;
 
           const currentState = service.getState ? service.getState() : {};
           let localRecords;

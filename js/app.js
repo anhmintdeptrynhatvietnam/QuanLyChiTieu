@@ -2,6 +2,7 @@
  * Main Application Bootstrap & Orchestrator
  */
 import { registerServiceWorker } from './ui/sw-update.js';
+import { initInitialSyncGate } from './ui/initial-sync-gate.js';
 import { stateStore } from './state.js';
 import { DashboardView } from './views/dashboard/dashboard-view.js';
 import { TransactionsView } from './views/transactions/transactions-view.js';
@@ -30,6 +31,7 @@ class App {
 
   init() {
     initTheme();
+    initInitialSyncGate();
     this.initComponents();
     this.setupThemeToggle();
     this.setupThemeListener();

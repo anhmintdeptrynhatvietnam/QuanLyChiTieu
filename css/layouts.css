@@ -297,3 +297,47 @@
     display: flex;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Startup gate: while a signed-in device fetches the latest cloud data, hide the
+   screens instead of showing stale numbers (js/ui/initial-sync-gate.js).
+   -------------------------------------------------------------------------- */
+.data-pending .content-area {
+  position: relative;
+  min-height: 60vh;
+}
+
+.data-pending .content-area > .view-section {
+  visibility: hidden;
+}
+
+.data-pending .content-area::before {
+  content: '';
+  position: absolute;
+  top: 30vh;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  margin-left: -14px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--primary-500);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.data-pending .content-area::after {
+  content: 'Đang tải dữ liệu mới nhất…';
+  position: absolute;
+  top: calc(30vh + 44px);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-pending .content-area::before {
+    animation: none;
+  }
+}

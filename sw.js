@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.21';
+const CACHE_NAME = 'qlct-pwa-v2.22';
 const CDN_CACHE = 'qlct-cdn-v1';
 
 const CDN_HOSTS = new Set([
@@ -52,6 +52,7 @@ const ASSETS_TO_CACHE = [
   './js/domain/record-hash.js',
   './js/domain/remote-merge.js',
   './js/domain/settings-migration.js',
+  './js/domain/snapshot-changes.js',
   './js/domain/sync-diff.js',
   './js/domain/transaction-entry.js',
   './js/domain/transaction-query.js',
@@ -76,6 +77,7 @@ const ASSETS_TO_CACHE = [
   './js/ui/category-grid.js',
   './js/ui/currency-input.js',
   './js/ui/icons.js',
+  './js/ui/initial-sync-gate.js',
   './js/ui/router.js',
   './js/ui/sw-update.js',
   './js/ui/sync-badge.js',

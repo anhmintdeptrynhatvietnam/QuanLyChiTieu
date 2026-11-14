@@ -115,7 +115,7 @@ and `docs/code-standards.md` — read them before non-trivial changes.
   - Sync engine `js/services/firebase-sync.js` (orchestrator) split into
     `firebase-sync-listeners.js`, `firebase-sync-ops.js`, and `firebase-sync-pull.js`:
     realtime listeners per collection, per-record baseline hashes in localStorage
-    `qlct_sync_baseline_{uid}`, pushes held until initial snapshots arrive, batched writes ≤450 ops.
+    `qlct_sync_baseline_{uid}`, pushes held until every collection has merged a server-confirmed snapshot (cached snapshots are skipped, `js/domain/snapshot-changes.js`), batched writes ≤450 ops.
   - Sign-in flow: different account than last time → local data replaced;
     first sign-in with data on both sides → device data is downloaded as a JSON
     backup, then cloud data is used (default) or merged; the sign-in flow can never

@@ -4,6 +4,14 @@ Tất cả các thay đổi quan trọng của dự án Ứng Dụng Quản Lý 
 
 ---
 
+## [2.1.5] - 2026-11-14
+
+### Sửa lỗi (Fixed)
+- **Chờ dữ liệu máy chủ khi mở app**: Firestore trả trước bản lưu tạm trên thiết bị (có thể cũ nhiều ngày); trước đây app coi đó là dữ liệu ban đầu, bắt đầu gộp/đẩy ngay, nên một thiết bị có bản lưu tạm cũ có thể đè bản mới hơn của thiết bị khác. Nay lần gộp đầu chỉ dùng snapshot đã được máy chủ xác nhận, gộp trên toàn bộ tài liệu ([js/domain/snapshot-changes.js](../js/domain/snapshot-changes.js)); khi offline, thay đổi chờ đến lúc có mạng mới đẩy.
+
+### Thay đổi (Changed)
+- **Không còn chớp số cũ**: khi mở app trên thiết bị đã đăng nhập và có mạng, màn hình hiện "Đang tải dữ liệu mới nhất…" đến khi nhận xong dữ liệu Cloud (tối đa 5 giây, sau đó hiện dữ liệu trên máy và tự cập nhật) ([js/ui/initial-sync-gate.js](../js/ui/initial-sync-gate.js)).
+
 ## [2.1.4] - 2026-11-14
 
 ### Sửa lỗi (Fixed)
