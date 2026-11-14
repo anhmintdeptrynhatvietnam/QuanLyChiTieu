@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.19';
+const CACHE_NAME = 'qlct-pwa-v2.20';
 const CDN_CACHE = 'qlct-cdn-v1';
 
 const CDN_HOSTS = new Set([
@@ -120,7 +120,7 @@ const ASSETS_TO_CACHE = [
   './js/views/transactions/transactions-header.js',
   './js/views/transactions/transactions-list-renderer.js',
   './js/views/transactions/transactions-view.js',
-  './js/views/wallets/wallet-actual-balance.js',
+  './js/views/wallets/wallet-balance-field.js',
   './js/views/wallets/wallet-sheet.js',
   './js/views/wallets/wallets-view.js'
 ];

@@ -4,6 +4,11 @@ Tất cả các thay đổi quan trọng của dự án Ứng Dụng Quản Lý 
 
 ---
 
+## [2.1.3] - 2026-11-14
+
+### Thay đổi (Changed)
+- Bỏ "Số dư ban đầu" khỏi giao diện: form ví chỉ còn một ô **"Số dư hiện tại"** ("Dư nợ hiện tại" với thẻ tín dụng) cho cả tạo và sửa ví; thẻ ví không còn dòng số dư ban đầu. App vẫn lưu số dư ban đầu bên trong và tự tính từ số dư hiện tại người dùng nhập ([js/views/wallets/wallet-balance-field.js](../js/views/wallets/wallet-balance-field.js)); chỉ thay đổi khi người dùng thực sự sửa ô này.
+
 ## [2.1.2] - 2026-11-14
 
 ### Thêm mới (Added)

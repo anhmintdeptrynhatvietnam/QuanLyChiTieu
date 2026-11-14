@@ -84,7 +84,6 @@ export class WalletsView {
 
     const isVisible = isAmountVisible(`wallet_${wallet.id}`);
     const balanceNum = Number(wallet.currentBalance) || 0;
-    const initialNum = Number(wallet.initialBalance) || 0;
 
     let balanceHtml = '';
     if (isCredit) {
@@ -99,8 +98,6 @@ export class WalletsView {
       balanceHtml = `<div class="wallet-card-balance text-primary">${formatCurrency(balanceNum)}</div>`;
     }
 
-    const subLabel = isCredit ? 'Hạn mức / Dư nợ đầu:' : 'Số dư ban đầu:';
-    const formattedInitial = isVisible ? formatCurrency(initialNum) : '••••••••';
 
     return `
       <div class="card-v2 wallet-card-item" style="border-top-color: ${safeColor(wallet.color || '#3b82f6')};">
@@ -125,7 +122,6 @@ export class WalletsView {
             ${isVisible ? balanceHtml : '<div class="wallet-card-balance text-primary"><span class="masked-amount">••••••••</span></div>'}
             ${renderEyeButton(`wallet_${wallet.id}`)}
           </div>
-          <small class="wallet-card-subtext">${subLabel} ${formattedInitial}</small>
         </div>
       </div>
     `;

@@ -3,11 +3,9 @@
  */
 import { openSheet } from '../../ui/bottom-sheet.js';
 import { stateStore } from '../../state.js';
-import { formatNumber } from '../../utils/formatters.js';
 import { escapeHtml, safeColor } from '../../utils/helpers.js';
 import { showToast } from '../../components/toast.js';
-import { attachCurrencyInput, getCurrencyValue } from '../../ui/currency-input.js';
-import { mountActualBalanceField } from './wallet-actual-balance.js';
+import { mountBalanceField } from './wallet-balance-field.js';
 
 const WALLET_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
 
@@ -21,7 +19,6 @@ export function openWalletSheet({ walletId = null, onDone = null } = {}) {
   content.className = 'wallet-form-container';
 
   let selectedColor = existingWallet?.color || WALLET_COLORS[0];
-  const initialBal = existingWallet ? (Number(existingWallet.initialBalance) || 0) : 0;
 
   content.innerHTML = `
     <form id="wallet-sheet-form" class="flex flex-col gap-4">
@@ -40,13 +37,7 @@ export function openWalletSheet({ walletId = null, onDone = null } = {}) {
         </select>
       </div>
 
-      <div class="form-group">
-        <label class="form-label" id="ws-balance-label" for="ws-wallet-initial">Số dư ban đầu (VNĐ) *</label>
-        <input type="text" id="ws-wallet-initial" class="form-input font-bold" placeholder="0" required />
-        <small id="ws-balance-hint" class="text-muted" style="display: block; margin-top: 4px; font-size: 11px;">
-          Số tiền thực tế hiện có trong ví.
-        </small>
-      </div>
+      <div id="ws-balance-slot"></div>
 
       <div class="form-group">
         <label class="form-label">Màu sắc nhận diện</label>
@@ -64,9 +55,6 @@ export function openWalletSheet({ walletId = null, onDone = null } = {}) {
 
   const nameInput = content.querySelector('#ws-wallet-name');
   const typeSelect = content.querySelector('#ws-wallet-type');
-  const balanceInput = content.querySelector('#ws-wallet-initial');
-  const balanceLabel = content.querySelector('#ws-balance-label');
-  const balanceHint = content.querySelector('#ws-balance-hint');
   const paletteEl = content.querySelector('#ws-color-palette');
   const cancelBtn = content.querySelector('#ws-btn-cancel');
   const form = content.querySelector('#wallet-sheet-form');
@@ -90,32 +78,16 @@ export function openWalletSheet({ walletId = null, onDone = null } = {}) {
   if (existingWallet) {
     nameInput.value = existingWallet.name || '';
     typeSelect.value = existingWallet.type || 'bank';
-    balanceInput.value = initialBal ? formatNumber(initialBal) : '0';
   } else {
     typeSelect.value = 'bank';
-    balanceInput.value = '';
   }
 
-  attachCurrencyInput(balanceInput);
-
-  function updateHints() {
-    if (typeSelect.value === 'credit') {
-      balanceLabel.textContent = 'Hạn mức / Dư nợ ban đầu (VNĐ)';
-      balanceHint.textContent = '⚡ Thẻ tín dụng tiêu trước trả sau, không được tính cộng vào Tổng tài sản.';
-    } else {
-      balanceLabel.textContent = 'Số dư ban đầu (VNĐ) *';
-      balanceHint.textContent = isEdit
-        ? 'Số dư lúc bắt đầu ghi sổ. Để khớp tiền hiện tại, dùng ô "Số dư thực tế" ở trên.'
-        : 'Số tiền thực tế hiện có trong ví.';
-    }
-  }
-  typeSelect.addEventListener('change', updateHints);
-  updateHints();
-
-  // Editing an existing wallet: let the user type the real-world balance instead of recomputing the initial one.
-  const actualField = existingWallet
-    ? mountActualBalanceField({ anchor: balanceInput.closest('.form-group'), wallet: existingWallet, typeSelect, initialInput: balanceInput })
-    : null;
+  // Users only see the current balance; the stored initial balance is derived from it.
+  const balanceField = mountBalanceField({
+    container: content.querySelector('#ws-balance-slot'),
+    wallet: existingWallet,
+    typeSelect
+  });
 
   cancelBtn.addEventListener('click', () => sheet?.close());
 
@@ -128,7 +100,7 @@ export function openWalletSheet({ walletId = null, onDone = null } = {}) {
       return;
     }
     const type = typeSelect.value;
-    const initialBalance = actualField?.getInitialOverride() ?? getCurrencyValue(balanceInput);
+    const initialBalance = balanceField.getInitialBalance();
 
     if (isEdit) {
       stateStore.updateWallet(walletId, {
