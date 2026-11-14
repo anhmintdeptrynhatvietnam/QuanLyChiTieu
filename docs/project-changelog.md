@@ -4,6 +4,11 @@ Tất cả các thay đổi quan trọng của dự án Ứng Dụng Quản Lý 
 
 ---
 
+## [2.1.2] - 2026-11-14
+
+### Thêm mới (Added)
+- **Khớp số dư thực tế**: khi sửa ví có ô "Số dư thực tế hiện tại" (thẻ tín dụng: "Dư nợ thực tế hiện tại"). Nhập số tiền đang có ngoài đời, app tự chỉnh số dư ban đầu theo chênh lệch ([js/domain/balance-reconcile.js](../js/domain/balance-reconcile.js)) nên số dư khớp ngay mà lịch sử giao dịch và báo cáo các tháng không đổi. Dùng khi bỏ app một thời gian rồi quay lại.
+
 ## [2.1.1] - 2026-11-14
 
 ### Thay đổi (Changed)

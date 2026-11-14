@@ -7,6 +7,7 @@ import { formatNumber } from '../../utils/formatters.js';
 import { escapeHtml, safeColor } from '../../utils/helpers.js';
 import { showToast } from '../../components/toast.js';
 import { attachCurrencyInput, getCurrencyValue } from '../../ui/currency-input.js';
+import { mountActualBalanceField } from './wallet-actual-balance.js';
 
 const WALLET_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
 
@@ -103,11 +104,18 @@ export function openWalletSheet({ walletId = null, onDone = null } = {}) {
       balanceHint.textContent = '⚡ Thẻ tín dụng tiêu trước trả sau, không được tính cộng vào Tổng tài sản.';
     } else {
       balanceLabel.textContent = 'Số dư ban đầu (VNĐ) *';
-      balanceHint.textContent = 'Số tiền thực tế hiện có trong ví.';
+      balanceHint.textContent = isEdit
+        ? 'Số dư lúc bắt đầu ghi sổ. Để khớp tiền hiện tại, dùng ô "Số dư thực tế" ở trên.'
+        : 'Số tiền thực tế hiện có trong ví.';
     }
   }
   typeSelect.addEventListener('change', updateHints);
   updateHints();
+
+  // Editing an existing wallet: let the user type the real-world balance instead of recomputing the initial one.
+  const actualField = existingWallet
+    ? mountActualBalanceField({ anchor: balanceInput.closest('.form-group'), wallet: existingWallet, typeSelect, initialInput: balanceInput })
+    : null;
 
   cancelBtn.addEventListener('click', () => sheet?.close());
 
@@ -120,7 +128,7 @@ export function openWalletSheet({ walletId = null, onDone = null } = {}) {
       return;
     }
     const type = typeSelect.value;
-    const initialBalance = getCurrencyValue(balanceInput);
+    const initialBalance = actualField?.getInitialOverride() ?? getCurrencyValue(balanceInput);
 
     if (isEdit) {
       stateStore.updateWallet(walletId, {
