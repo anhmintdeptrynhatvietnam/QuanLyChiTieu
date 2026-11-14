@@ -42,14 +42,7 @@ export function getTransactionFormHTML({ currentType, currentDate, isEdit, exist
         </div>
       </div>
 
-      <!-- Category Slot (Chi/Thu) -->
-      <div id="tx-category-section" class="form-group">
-        <label class="form-label">Hạng mục *</label>
-        <div id="tx-category-grid-slot"></div>
-        <div id="tx-category-error" class="sheet-field-error" style="display: none;"></div>
-      </div>
-
-      <!-- Wallet Slot -->
+      <!-- Wallet Slot (one row, so it sits above the taller category grid) -->
       <div id="tx-wallet-section" class="form-group">
         <label class="form-label" id="tx-wallet-label">Tài khoản / Ví *</label>
         <div id="tx-wallet-picker-slot"></div>
@@ -61,6 +54,13 @@ export function getTransactionFormHTML({ currentType, currentDate, isEdit, exist
         <label class="form-label">Chuyển đến ví *</label>
         <div id="tx-to-wallet-picker-slot"></div>
         <div id="tx-to-wallet-error" class="sheet-field-error" style="display: none;"></div>
+      </div>
+
+      <!-- Category Slot (Chi/Thu): compact, most-used first, collapsed to two rows -->
+      <div id="tx-category-section" class="form-group">
+        <label class="form-label">Hạng mục *</label>
+        <div id="tx-category-grid-slot"></div>
+        <div id="tx-category-error" class="sheet-field-error" style="display: none;"></div>
       </div>
 
       <!-- Date Section -->

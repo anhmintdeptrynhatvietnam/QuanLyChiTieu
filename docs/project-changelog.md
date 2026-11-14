@@ -4,6 +4,11 @@ Tất cả các thay đổi quan trọng của dự án Ứng Dụng Quản Lý 
 
 ---
 
+## [2.1.7] - 2026-11-14
+
+### Thay đổi (Changed)
+- **Form ghi giao dịch gọn hơn**: chọn ví/nguồn tiền nằm ngay dưới số tiền; lưới hạng mục thu nhỏ (5 cột, tên 1 dòng), chỉ hiện 2 hàng với các hạng mục dùng nhiều nhất trong 90 ngày ([js/domain/category-usage.js](../js/domain/category-usage.js)) và ô "Xem tất cả" để mở hết; hạng mục đang chọn luôn hiện.
+
 ## [2.1.6] - 2026-11-14
 
 ### Sửa lỗi (Fixed)

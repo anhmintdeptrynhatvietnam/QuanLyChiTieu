@@ -436,3 +436,51 @@
     animation: none !important;
   }
 }
+
+/* Category icon size (set via class so compact grids can shrink it) */
+.category-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* Compact category grid: quick-add sheet (5 columns, small icons, one-line names) */
+.category-grid-compact {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-1, 4px);
+  padding: 0;
+}
+
+.category-grid-compact .category-grid-item {
+  padding: 6px 2px;
+  gap: 4px;
+}
+
+.category-grid-compact .category-icon-circle {
+  width: 38px;
+  height: 38px;
+}
+
+.category-grid-compact .category-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.category-grid-compact .category-name {
+  font-size: 11px;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+}
+
+@media (min-width: 768px) {
+  .category-grid-compact {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+.category-toggle-item .category-name {
+  color: var(--primary-500);
+  font-weight: 600;
+}

@@ -9,6 +9,7 @@ import { showToast } from '../../components/toast.js';
 import { confirmDialog } from '../../components/confirm-dialog.js';
 import { attachCurrencyInput, getCurrencyValue } from '../../ui/currency-input.js';
 import { renderCategoryGrid } from '../../ui/category-grid.js';
+import { rankCategoriesByUsage } from '../../domain/category-usage.js';
 import { renderWalletPicker } from '../../ui/wallet-picker.js';
 import { refreshIcons } from '../../ui/icons.js';
 import { resolveEntryDefaults } from '../../domain/transaction-entry.js';
@@ -64,9 +65,12 @@ export function renderTransactionForm({ txId = null, type = null, walletId = nul
     if (!isTransfer) {
       const catSlot = container.querySelector('#tx-category-grid-slot');
       catSlot.innerHTML = '';
+      const { categories, transactions } = stateStore.getState();
       catSlot.appendChild(renderCategoryGrid({
-        categories: stateStore.getState().categories,
+        categories: rankCategoriesByUsage(categories, transactions, getCurrentDateFormatted()),
         type: currentType,
+        compact: true,
+        collapsedCount: 9, // 2 rows of 5 with the "Xem tất cả" tile
         selectedId: currentCategoryId,
         onSelect: (id) => { currentCategoryId = id; },
         onCreate: () => openCategoryCreateSheet({
