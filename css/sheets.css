@@ -124,10 +124,12 @@
 /* Sticky Sheet Footer (Full-width actions on mobile and desktop) */
 .sheet-sticky-footer {
   position: sticky;
-  bottom: 0;
+  /* Cover the sheet body's bottom padding so nothing scrolls into view below the button. */
+  bottom: calc(-1 * var(--space-4, 16px));
+  margin-bottom: calc(-1 * var(--space-4, 16px));
   background: var(--bg-surface);
   padding-top: var(--space-3, 12px);
-  padding-bottom: var(--space-1, 4px);
+  padding-bottom: calc(var(--space-4, 16px) + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--border-subtle);
   margin-top: auto;
   z-index: 10;

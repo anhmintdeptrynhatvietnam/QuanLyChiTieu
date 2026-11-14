@@ -57,9 +57,11 @@ export function openSheet({ title = '', content = null, onClose = null, size = '
 
   refreshIcons(container);
 
-  // Lock body scroll
-  const prevOverflow = document.body.style.overflow;
-  document.body.style.overflow = 'hidden';
+  // Lock the page behind the sheet. iOS Safari ignores overflow:hidden on body,
+  // so pin the body in place and restore the scroll position on close.
+  const scrollY = window.scrollY;
+  const prevBodyStyle = document.body.getAttribute('style') || '';
+  Object.assign(document.body.style, { position: 'fixed', top: `-${scrollY}px`, left: '0', right: '0', overflow: 'hidden' });
 
   // Focus trap
   const cleanupTrap = trapFocus(backdrop);
@@ -79,7 +81,8 @@ export function openSheet({ title = '', content = null, onClose = null, size = '
     cleanupTrap();
 
     const finishCleanup = () => {
-      document.body.style.overflow = prevOverflow;
+      document.body.setAttribute('style', prevBodyStyle);
+      window.scrollTo(0, scrollY);
       if (backdrop.parentNode) {
         backdrop.parentNode.removeChild(backdrop);
       }

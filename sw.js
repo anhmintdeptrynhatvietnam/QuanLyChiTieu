@@ -3,7 +3,7 @@
  * Caches static shell and assets for instant loading and offline support.
  */
 
-const CACHE_NAME = 'qlct-pwa-v2.22';
+const CACHE_NAME = 'qlct-pwa-v2.23';
 const CDN_CACHE = 'qlct-cdn-v1';
 
 const CDN_HOSTS = new Set([

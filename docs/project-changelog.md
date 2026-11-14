@@ -4,6 +4,11 @@ Tất cả các thay đổi quan trọng của dự án Ứng Dụng Quản Lý 
 
 ---
 
+## [2.1.6] - 2026-11-14
+
+### Sửa lỗi (Fixed)
+- **Form ghi giao dịch trên điện thoại bị xô lệch**: form chỉ còn cuộn dọc (khoá trượt ngang, lưới hạng mục không còn tràn khi tên hạng mục dài), trang phía sau không còn cuộn/nảy theo trên iPhone, và nút Lưu che kín phần đáy nên nội dung không lộ ra bên dưới nút.
+
 ## [2.1.5] - 2026-11-14
 
 ### Sửa lỗi (Fixed)
